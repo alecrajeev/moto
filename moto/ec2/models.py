@@ -1033,8 +1033,6 @@ class RIOfferingBackend(object):
             print("Type Error. Some strange error with numpy in python2")
             return []
 
-        print("here2")
-
         index_of_offering_ids = where((offering_ids_table["InstanceTenancy"] == instance_tenancy) &
             (offering_ids_table["ProductDescription"] == description) &
             (offering_ids_table["OfferingClass"] == offering_class) &
