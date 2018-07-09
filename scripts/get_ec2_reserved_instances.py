@@ -265,7 +265,7 @@ def get_instance_types(session):
 
 
 def build_ec2_reserved_instances(session, regions, instance_types):
-    
+
     Hash_Tables = []
 
     for i in np.arange(0, hash_table_divider):
