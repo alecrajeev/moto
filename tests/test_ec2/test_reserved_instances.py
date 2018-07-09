@@ -78,6 +78,20 @@ def test_reserved_instances_valid_offering_class():
 
 
 @mock_ec2
+def test_reserved_instances_valid_offering_class_convertible():
+    client = boto3.client("ec2", region_name="us-east-2")
+
+    # invalid because standard and convertible are the only options
+    offering_class_test = "convertible"
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows",
+                    InstanceTenancy="dedicated", OfferingClass=offering_class_test,
+                    OfferingType="Partial Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    offerings["ReservedInstancesOfferings"][0]["OfferingClass"].should.equal(offering_class_test)
+
+
+@mock_ec2
 def test_reserved_instances_invalid_offering_type():
     client = boto3.client("ec2", region_name="us-east-2")
 
