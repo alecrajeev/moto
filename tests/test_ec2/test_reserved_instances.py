@@ -10,6 +10,7 @@ import ipaddress
 import six
 import boto
 import boto3
+from boto.ec2.instance import Reservation, InstanceAttribute
 from boto.exception import EC2ResponseError, EC2ResponseError
 from botocore.exceptions import ClientError
 from freezegun import freeze_time
