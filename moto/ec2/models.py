@@ -1025,12 +1025,13 @@ class RIOfferingBackend(object):
                         (u"Amount".encode("ascii"), "f4"),
                         (u"Frequency".encode("ascii"), "U6")]
         try:
-            offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/" + file_name), dtype=ri_table_dtype, delimiter=",", skiprows=1)
+            offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/" +
+                region.replace("-", "_") + "/" file_name), dtype=ri_table_dtype, delimiter=",", skiprows=1)
         except IOError:
             # no reserved instances exist for that type and region. return empty list
             return []
         except TypeError:
-            print("Type Error. Some strange error with numpy in python2")
+            # print("Type Error. Some strange error with numpy in python2")
             return []
 
         index_of_offering_ids = where((offering_ids_table["InstanceTenancy"] == instance_tenancy) &

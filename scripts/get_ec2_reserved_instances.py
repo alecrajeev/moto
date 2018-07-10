@@ -39,7 +39,7 @@ def save_reserved_instance_offerings(RI_Table, region, instance_type):
 
     file_name = get_file_name(region, instance_type) + ".csv"
 
-    dest = os.path.join(root_dir, 'moto/ec2/resources/reserved_instances/'
+    dest = os.path.join(root_dir, 'moto/ec2/resources/reserved_instances/' + region.replace("-", "_") + "/"
                             + file_name)
 
     np.savetxt(dest,RI_Table, fmt="%s", delimiter=",", newline="\n",
