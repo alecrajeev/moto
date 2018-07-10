@@ -316,7 +316,7 @@ def test_reserved_instances_number_of_offerings():
 def test_reserved_instnaces_no_offering_available():
     client = boto3.client("ec2", region_name="us-east-2")    
 
-    client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Red Hat Enterprise Linux",
+    offerings = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Red Hat Enterprise Linux",
         InstanceTenancy="dedicated", OfferingClass="standard",
         OfferingType="Partial Upfront", MaxDuration=94608000, MinDuration=94608000)
 
