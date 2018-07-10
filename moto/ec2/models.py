@@ -1026,7 +1026,7 @@ class RIOfferingBackend(object):
                         (u"Frequency".encode("ascii"), "U6")]
         try:
             offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/" +
-                region.replace("-", "_") + "/" file_name), dtype=ri_table_dtype, delimiter=",", skiprows=1)
+                region.replace("-", "_") + "/" + file_name), dtype=ri_table_dtype, delimiter=",", skiprows=1)
         except IOError:
             # no reserved instances exist for that type and region. return empty list
             return []
