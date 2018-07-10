@@ -310,3 +310,18 @@ def test_reserved_instances_number_of_offerings():
     # You can purchase reserved instances in two availability zones out of 3 plus an additional regional one.
     # This could change if they increase the number of availability zones in Ohio
     number_of_offerings.should.equal(3)
+
+
+@mock_ec2
+def test_reserved_instnaces_no_offering_available():
+    client = boto3.client("ec2", region_name="us-east-2")    
+
+    client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Red Hat Enterprise Linux",
+        InstanceTenancy="dedicated", OfferingClass="standard",
+        OfferingType="Partial Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    number_of_offerings = len(offerings["ReservedInstancesOfferings"])
+
+    # Currently AWS does not offer reserved instances with these criteria, so it should return an empty set.
+
+    number_of_offerings.should.equal(0)
