@@ -20,7 +20,7 @@ from boto.ec2.reservedinstance import ReservedInstancesOffering as BotoReservedI
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.spotinstancerequest import SpotInstanceRequest as BotoSpotRequest
 from boto.ec2.launchspecification import LaunchSpecification
-from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs
+from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape
 
 from moto.compat import OrderedDict
 from moto.core import BaseBackend
@@ -979,8 +979,9 @@ class RIOfferingBackend(object):
             self.invalid_product_description(description)
 
             duration = int(max_duration)
-            offerings = self.find_offering_ids_from_details(region, instance_type, description, instance_tenancy,
-                offering_class, offering_type, duration)
+            offerings = self.get_offerings_from_details(region, instance_type, instance_tenancy=instance_tenancy,
+                duration=duration, offering_type=offering_type, offering_class=offering_class,
+                description=description)
 
             return offerings
         else:
@@ -995,8 +996,8 @@ class RIOfferingBackend(object):
 
         return region.replace("-", "_") + "_" + instance_type.replace(".", "_") + ".csv"
 
-    def find_offering_ids_from_details(self, region, instance_type, description, instance_tenancy, offering_class,
-            offering_type, duration):
+    def get_offerings_from_details(self, region, instance_type, **kwargs):
+
         offerings = []
 
         file_name = self.get_file_name(region, instance_type)
@@ -1042,26 +1043,50 @@ class RIOfferingBackend(object):
         except TypeError:
             # print("Type Error. Some strange error with numpy in python2")
             return []
+        
+        reserved_instances_offering_id = kwargs.get("reserved_instances_offering_id")
+        instance_tenancy = kwargs.get("instance_tenancy")
+        description = kwargs.get("description")
+        offering_class = kwargs.get("offering_class")
+        offering_type = kwargs.get("offering_type")
+        duration = kwargs.get("duration")
 
-        index_of_offering_ids = where((offering_ids_table["InstanceTenancy"] == instance_tenancy) &
-            (offering_ids_table["ProductDescription"] == description) &
-            (offering_ids_table["OfferingClass"] == offering_class) &
-            (offering_ids_table["OfferingType"] == offering_type) &
-            (offering_ids_table["Duration"] == duration))[0]
+        # conditional lists of boolean numpy arrays
+        conditionals = []
+
+        if not(reserved_instances_offering_id is None):
+            conditionals.append(isin(offering_ids_table["ReservedInstancesOfferings"], reserved_instances_offering_id))
+        if not(instance_tenancy is None):
+            conditionals.append(offering_ids_table["InstanceTenancy"] == instance_tenancy)
+        if not(description is None):
+            conditionals.append(offering_ids_table["ProductDescription"] == description)
+        if not(offering_class is None):
+            conditionals.append(offering_ids_table["OfferingClass"] == offering_class)
+        if not(offering_type is None):
+            conditionals.append(offering_ids_table["OfferingType"] == offering_type)
+        if not(duration is None):
+            conditionals.append(offering_ids_table["Duration"] == duration)
+        
+        # TODO: vectorize this even more
+        conditionals_prod = full(shape(conditionals[0]), True)
+        for i in range(0, len(conditionals)):
+            conditionals_prod *= conditionals[i]
+
+        index_of_offering_ids = where(conditionals_prod)[0]
 
         for index in index_of_offering_ids:
 
             new_offering = ReservedInstancesOffering(
                 self,
                 id=offering_ids_table[index]["ReservedInstancesOfferings"],
-                instance_type=instance_type,
+                instance_type=offering_ids_table[index]["InstanceType"],
                 region=region,
-                instance_tenancy=instance_tenancy,
-                description=description,
-                offering_type=offering_type,
-                offering_class=offering_class,
+                instance_tenancy=offering_ids_table[index]["InstanceTenancy"],
+                description=offering_ids_table[index]["ProductDescription"],
+                offering_type=offering_ids_table[index]["OfferingType"],
+                offering_class=offering_ids_table[index]["OfferingClass"],
                 availability_zone=offering_ids_table[index]["AvailabilityZone"],
-                duration=duration,
+                duration=offering_ids_table[index]["Duration"],
                 scope=offering_ids_table[index]["Scope"],
                 marketplace=False,
                 fixed_price=offering_ids_table[index]["FixedPrice"],
@@ -1076,6 +1101,7 @@ class RIOfferingBackend(object):
     
     def find_offering_ids_from_ids(self, reserved_instances_offering_id):
         file_name = None
+        offerings = []
 
         index = self.polyhash_prime(reserved_instances_offering_id[0:8], 31, 12011, 2011)
 
@@ -1086,12 +1112,18 @@ class RIOfferingBackend(object):
                 "offering_ids_hash.csv"), dtype="U36", delimiter=",", skiprows=0)
         
         file_names_list = offering_ids_table[index]
+        file_name = None
         for offering_hash in file_names_list:
             if offering_hash[0:8] == reserved_instances_offering_id[0:8]:
                 file_name = offering_hash.split("|")[1]
         
-        print(file_name)
-        return []
+        if not(file_name is None):
+            i = self.get_loc_of_first_digit(file_name)
+            region = file_name[0:i].replace("_","-")
+            instance_type = file_name[i+1:len(file_name)].replace("_",".")
+            offerings = self.get_offerings_from_details(region, instance_type, reserved_instances_offering_id=reserved_instances_offering_id)
+        
+        return offerings
 
 
     def invalid_instance_type(self, instance_type):
@@ -1225,7 +1257,16 @@ class RIOfferingBackend(object):
         # currently only supports one offering id as input
         if len(reserved_instances_offering_id) != 1:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-
+        
+        if len(reserved_instances_offering_id[0]) != 36:
+            raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
+    
+    def get_loc_of_first_digit(self, file_name):
+        i = 0
+        for c in file_name:
+            if file_name[i].isdigit():
+                return i+1
+            i += 1
 
 
 class KeyPair(object):
