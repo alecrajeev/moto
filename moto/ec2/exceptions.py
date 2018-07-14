@@ -414,6 +414,16 @@ class InvalidParameterValueErrorOfferingId(EC2ClientError):
         )
 
 
+class InvalidParameterValueErrorOfferingId(EC2ClientError):
+
+    def __init__(self, parameter_value):
+        super(InvalidParameterValueErrorOfferingId, self).__init__(
+            "InvalidParameterValue",
+            "Invalid value \'{0}\' for ReservedInstancesOfferingId."
+            .format(parameter_value)
+        )
+
+
 class InvalidInternetGatewayIdError(EC2ClientError):
 
     def __init__(self, internet_gateway_id):
