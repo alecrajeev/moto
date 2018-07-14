@@ -92,8 +92,6 @@ def polyhash_prime(offering_id, a, p, m):
     return np.abs(hash % m)
 
 
-
-
 def add_to_hash_table(ri, region, Hash_Table, Hash_Table_Count):
     offering_id = ri["ReservedInstancesOfferingId"]
     instance_type = ri["InstanceType"]
@@ -145,63 +143,6 @@ def parse_reserved_instance_offerings(ri_offerings, region, Hash_Table,
         add_to_hash_table(ri_offerings[i], region, Hash_Table, Hash_Table_Count)
 
     return ri_table_partial
-
-def get_offerings_rescursion(client,instance_type, NextToken, RI_Table,
-                  region, Hash_Table, Hash_Table_Count):
-
-    offerings = 0
-    # adding sleep because of AWS EC2 Rate Limit
-    sleep(4)
-    # print("step" + str(randint(1,30)))
-
-    if NextToken == "start":
-        # first step in, no token givern
-        offerings = client.describe_reserved_instances_offerings(
-                InstanceType=instance_type, IncludeMarketplace=False)
-
-        if "ReservedInstancesOfferings" in offerings:
-            temp_table = parse_reserved_instance_offerings(
-                            offerings["ReservedInstancesOfferings"],
-                            region, Hash_Table, Hash_Table_Count)
-        else:
-            return RI_Table
-
-        if temp_table is not None:
-            RI_Table = temp_table
-
-    else:
-        # deeper steps
-        offerings = client.describe_reserved_instances_offerings(
-                InstanceType=instance_type, IncludeMarketplace=False,
-                NextToken=NextToken)
-
-        if "ReservedInstancesOfferings" in offerings:
-            temp_table = parse_reserved_instance_offerings(
-                            offerings["ReservedInstancesOfferings"],
-                            region, Hash_Table, Hash_Table_Count)
-        else:
-            return RI_Table
-
-        temp_table = parse_reserved_instance_offerings(
-                    offerings["ReservedInstancesOfferings"])
-        if temp_table is not None:
-            # combines two tables, need to check if this works as intended
-            RI_Table = np.append(RI_Table, temp_table)
-
-    if "NextToken" in offerings:
-        try:
-            return get_offerings_rescursion(client, instance_type, NextToken, RI_Table,
-                                 region, Hash_Table, Hash_Table_Count)
-        except botocore.exceptions.ClientError as e:
-            timeout = 60
-            print("[Warning] API rate exceeded, throttling back for 60 seconds")
-            sleep(timeout)
-
-            return get_offerings_rescursion(client, instance_type, NextToken, RI_Table,
-                                 region, Hash_Table, Hash_Table_Count)
-
-    else:
-        return RI_Table
 
 
 def get_offerings_check_rate_limit(client,instance_type, NextToken, RI_Table, region, Hash_Table, Hash_Table_Count):
