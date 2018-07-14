@@ -20,11 +20,10 @@ from boto.ec2.reservedinstance import ReservedInstancesOffering as BotoReservedI
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.spotinstancerequest import SpotInstanceRequest as BotoSpotRequest
 from boto.ec2.launchspecification import LaunchSpecification
-<<<<<<< HEAD
-from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape, floor
-=======
 from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs
->>>>>>> can find the file name from offering id
+=======
+from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape
+>>>>>>> succesfully returns offering info from id
 
 from moto.compat import OrderedDict
 from moto.core import BaseBackend
@@ -990,41 +989,29 @@ class RIOfferingBackend(object):
             self.invalid_instance_tenancy(instance_tenancy)
             self.invalid_max_duration(max_duration)
             self.invalid_min_duration(min_duration)
-<<<<<<< HEAD
-=======
             self.invalid_duration(max_duration, min_duration)
->>>>>>> can find the file name from offering id
             self.invalid_offering_type(offering_type)
             self.invalid_offering_class(offering_class)
             self.invalid_product_description(description)
 
+            duration = int(max_duration)
 <<<<<<< HEAD
-            duration = self.get_duration(max_duration, min_duration)
+            offerings = self.find_offering_ids_from_details(region, instance_type, description, instance_tenancy,
+                offering_class, offering_type, duration)
+=======
             offerings = self.get_offerings_from_details(region, instance_type, instance_tenancy=instance_tenancy,
                 duration=duration, offering_type=offering_type, offering_class=offering_class,
                 description=description)
-=======
-            duration = int(max_duration)
-            offerings = self.find_offering_ids_from_details(region, instance_type, description, instance_tenancy,
-                offering_class, offering_type, duration)
->>>>>>> can find the file name from offering id
+>>>>>>> succesfully returns offering info from id
 
             return offerings
         else:
             self.invalid_reserved_instances_offering_id(reserved_instances_offering_id)
-<<<<<<< HEAD
-
-            # TODO: make this work for multiple offering ids
-            offerings = self.find_offering_ids_from_ids(reserved_instances_offering_id)
-
-            return offerings
-=======
 
             offerings = self.find_offering_ids_from_ids(reserved_instances_offering_id[0])
 
             return offerings
-            
->>>>>>> can find the file name from offering id
+
 
     def get_file_name(self, region, instance_type):
 
@@ -1099,6 +1086,34 @@ class RIOfferingBackend(object):
         if not(offering_type is None):
             conditionals.append(offering_ids_table["OfferingType"] == offering_type)
         if not(duration is None):
+            conditionals.append(offering_ids_table["Duration"] == duration)
+
+        # TODO: vectorize this even more
+        conditionals_prod = full(shape(conditionals[0]), True)
+        for i in range(0, len(conditionals)):
+            conditionals_prod *= conditionals[i]
+
+        reserved_instances_offering_id = kwargs.get("reserved_instances_offering_id")
+        instance_tenancy = kwargs.get("instance_tenancy")
+        description = kwargs.get("description")
+        offering_class = kwargs.get("offering_class")
+        offering_type = kwargs.get("offering_type")
+        duration = kwargs.get("duration")
+
+        # conditional lists of boolean numpy arrays
+        conditionals = []
+
+        if not(reserved_instances_offering_id is None):
+            conditionals.append(isin(offering_ids_table["ReservedInstancesOfferings"], reserved_instances_offering_id))
+        if not(instance_tenancy is None):
+            conditionals.append(offering_ids_table["InstanceTenancy"] == instance_tenancy)
+        if not(description is None):
+            conditionals.append(offering_ids_table["ProductDescription"] == description)
+        if not(offering_class is None):
+            conditionals.append(offering_ids_table["OfferingClass"] == offering_class)
+        if not(offering_type is None):
+            conditionals.append(offering_ids_table["OfferingType"] == offering_type)
+        if not(duration is None):
             conditionals.append(isin(offering_ids_table["Duration"], duration))
 
         # TODO: vectorize this even more
@@ -1132,9 +1147,10 @@ class RIOfferingBackend(object):
             offerings.append(new_offering)
 
         return offerings
-    
+
     def find_offering_ids_from_ids(self, reserved_instances_offering_id):
         file_name = None
+        offerings = []
 
         index = self.polyhash_prime(reserved_instances_offering_id[0:8], 31, 12011, 2011)
 
@@ -1143,14 +1159,20 @@ class RIOfferingBackend(object):
 
         offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/" +
                 "offering_ids_hash.csv"), dtype="U36", delimiter=",", skiprows=0)
-        
+
         file_names_list = offering_ids_table[index]
+        file_name = None
         for offering_hash in file_names_list:
             if offering_hash[0:8] == reserved_instances_offering_id[0:8]:
                 file_name = offering_hash.split("|")[1]
-        
-        print(file_name)
-        return []
+
+        if not(file_name is None):
+            i = self.get_loc_of_first_digit(file_name)
+            region = file_name[0:i].replace("_","-")
+            instance_type = file_name[i+1:len(file_name)].replace("_",".")
+            offerings = self.get_offerings_from_details(region, instance_type, reserved_instances_offering_id=reserved_instances_offering_id)
+
+        return offerings
 
 
     def find_offering_ids_from_ids(self, reserved_instances_offering_id):
@@ -1331,17 +1353,9 @@ class RIOfferingBackend(object):
             if len(reserved_instances_offering_id[i]) != 36:
                 raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
 
-<<<<<<< HEAD
-    def get_loc_of_first_digit(self, file_name):
-        i = 0
-        for c in file_name:
-            if file_name[i].isdigit():
-                return i + 1
-            i += 1
-=======
         if min_duration != max_duration:
             raise InvalidParameterValueErrorDurationMisMatch(min_duration)
-    
+
     def polyhash_prime(self, offering_id, a, p, m):
         # hash function from https://startupnextdoor.com/spending-a-couple-days-on-hashing-functions/
         hash = 0
@@ -1350,20 +1364,32 @@ class RIOfferingBackend(object):
             hash = (hash*a + ord(c)) % p
 
         return numpyabs(hash % m)
-    
+
     def invalid_reserved_instances_offering_id(self, reserved_instances_offering_id):
         """
         Checks if offering id format is valid. (not necessarily if the id exists)
         """
-        
+
         if reserved_instances_offering_id is None:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-        
+
         # currently only supports one offering id as input
         if len(reserved_instances_offering_id) != 1:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
+<<<<<<< HEAD
 
->>>>>>> can find the file name from offering id
+=======
+
+        if len(reserved_instances_offering_id[0]) != 36:
+            raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
+
+    def get_loc_of_first_digit(self, file_name):
+        i = 0
+        for c in file_name:
+            if file_name[i].isdigit():
+                return i+1
+            i += 1
+>>>>>>> succesfully returns offering info from id
 
 
 class KeyPair(object):
