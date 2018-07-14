@@ -20,10 +20,10 @@ from boto.ec2.reservedinstance import ReservedInstancesOffering as BotoReservedI
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.spotinstancerequest import SpotInstanceRequest as BotoSpotRequest
 from boto.ec2.launchspecification import LaunchSpecification
-from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs
-=======
 from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape
->>>>>>> succesfully returns offering info from id
+=======
+from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape, floor
+>>>>>>> Split up 20 mb hash table to increase speed
 
 from moto.compat import OrderedDict
 from moto.core import BaseBackend
@@ -995,14 +995,9 @@ class RIOfferingBackend(object):
             self.invalid_product_description(description)
 
             duration = int(max_duration)
-<<<<<<< HEAD
-            offerings = self.find_offering_ids_from_details(region, instance_type, description, instance_tenancy,
-                offering_class, offering_type, duration)
-=======
             offerings = self.get_offerings_from_details(region, instance_type, instance_tenancy=instance_tenancy,
                 duration=duration, offering_type=offering_type, offering_class=offering_class,
                 description=description)
->>>>>>> succesfully returns offering info from id
 
             return offerings
         else:
@@ -1155,12 +1150,15 @@ class RIOfferingBackend(object):
         index = self.polyhash_prime(reserved_instances_offering_id[0:8], 31, 12011, 2011)
 
         # for when I split up the offerings index file into 100 sub files:
-        # index_file = int(np.ceil(index*100/2011))
+        # index_file = int(np.floor(index*100/2011))
+        index_file = self.get_index_of_hash_tables(index)
 
-        offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/" +
-                "offering_ids_hash.csv"), dtype="U36", delimiter=",", skiprows=0)
+        index_adjusted = self.get_index_adjusted(index_file, index)
 
-        file_names_list = offering_ids_table[index]
+        offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/hash_table/" +
+                "offering_ids_hash_" + str(index_file) + ".csv"), dtype="U36", delimiter=",", skiprows=0)
+
+        file_names_list = offering_ids_table[index_adjusted]
         file_name = None
         for offering_hash in file_names_list:
             if offering_hash[0:8] == reserved_instances_offering_id[0:8]:
@@ -1174,6 +1172,14 @@ class RIOfferingBackend(object):
 
         return offerings
 
+    def get_index_of_hash_tables(self, index):
+        index_file = int(floor(index*100/2011))
+
+        return index_file
+
+    def get_index_adjusted(self, index_file, index):
+
+        return index-index_fill*100
 
     def find_offering_ids_from_ids(self, reserved_instances_offering_id):
         file_name = None
@@ -1376,9 +1382,6 @@ class RIOfferingBackend(object):
         # currently only supports one offering id as input
         if len(reserved_instances_offering_id) != 1:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-<<<<<<< HEAD
-
-=======
 
         if len(reserved_instances_offering_id[0]) != 36:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
@@ -1389,7 +1392,6 @@ class RIOfferingBackend(object):
             if file_name[i].isdigit():
                 return i+1
             i += 1
->>>>>>> succesfully returns offering info from id
 
 
 class KeyPair(object):
