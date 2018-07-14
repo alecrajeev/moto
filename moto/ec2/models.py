@@ -16,11 +16,11 @@ import boto.ec2
 from collections import defaultdict
 from datetime import datetime
 from boto.ec2.instance import Instance as BotoInstance, Reservation
-from boto.ec2.reservedinstance import ReservedInstancesOffering as BotoReservedInstanceOffering
+from boto.ec2.reservedinstance import ReservedInstancesOffering as BotoReservedInstancesOffering
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.spotinstancerequest import SpotInstanceRequest as BotoSpotRequest
 from boto.ec2.launchspecification import LaunchSpecification
-from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where
+from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs
 
 from moto.compat import OrderedDict
 from moto.core import BaseBackend
@@ -59,6 +59,7 @@ from .exceptions import (
     InvalidParameterValueErrorMaxDuration,
     InvalidParameterValueErrorMinDuration,
     InvalidParameterValueErrorDurationMisMatch,
+    InvalidParameterValueErrorOfferingId,
     InvalidPermissionNotFoundError,
     InvalidPermissionDuplicateError,
     InvalidRouteTableIdError,
@@ -909,9 +910,9 @@ class InstanceBackend(object):
             raise InvalidParameterValueErrorInstanceType(instance_type)
 
 
-class ReservedInstanceOffering(BotoReservedInstanceOffering):
+class ReservedInstancesOffering(BotoReservedInstancesOffering):
     def __init__(self, ec2_backend, **kwargs):
-        super(ReservedInstanceOffering, self).__init__()
+        super(ReservedInstancesOffering, self).__init__()
         self.ec2_backend = ec2_backend
         self.id = kwargs.get("id"),
         self.instance_type = kwargs.get("instance_type")
@@ -930,7 +931,7 @@ class ReservedInstanceOffering(BotoReservedInstanceOffering):
         self.amount = kwargs.get("amount"),
         self.frequency = kwargs.get("frequency")
 
-        # BotoReservedInstanceOffering makes these tuples,
+        # BotoReservedInstancesOffering makes these tuples,
         # but usually this is not necessary, so undoing that
         if type(self.id) is tuple:
             self.id = self.id[0]
@@ -957,30 +958,38 @@ class RIOfferingBackend(object):
         self.offerings = OrderedDict()
         super(RIOfferingBackend, self).__init__()
 
-    def get_offering_ids(self, **kwargs):
-        instance_type = kwargs.get("instance_type")
-        max_duration = kwargs.get("max_duration")
-        min_duration = kwargs.get("min_duration")
-        offering_type = kwargs.get("offering_type")
-        offering_class = kwargs.get("offering_class")
-        region = kwargs.get("region")
-        description = kwargs.get("description")
-        instance_tenancy = kwargs.get("instance_tenancy")
+    def get_offering_ids(self, reserved_instances_offering_id, **kwargs):
+        if reserved_instances_offering_id is None or reserved_instances_offering_id == []:
+            instance_type = kwargs.get("instance_type")
+            max_duration = kwargs.get("max_duration")
+            min_duration = kwargs.get("min_duration")
+            offering_type = kwargs.get("offering_type")
+            offering_class = kwargs.get("offering_class")
+            region = kwargs.get("region")
+            description = kwargs.get("description")
+            instance_tenancy = kwargs.get("instance_tenancy")
 
-        self.invalid_instance_type(instance_type)
-        self.invalid_instance_tenancy(instance_tenancy)
-        self.invalid_max_duration(max_duration)
-        self.invalid_min_duration(min_duration)
-        self.invalid_duration(max_duration, min_duration)
-        self.invalid_offering_type(offering_type)
-        self.invalid_offering_class(offering_class)
-        self.invalid_product_description(description)
+            self.invalid_instance_type(instance_type)
+            self.invalid_instance_tenancy(instance_tenancy)
+            self.invalid_max_duration(max_duration)
+            self.invalid_min_duration(min_duration)
+            self.invalid_duration(max_duration, min_duration)
+            self.invalid_offering_type(offering_type)
+            self.invalid_offering_class(offering_class)
+            self.invalid_product_description(description)
 
-        duration = int(max_duration)
-        offerings = self.find_offering_ids_from_details(region, instance_type, description, instance_tenancy,
-            offering_class, offering_type, duration)
+            duration = int(max_duration)
+            offerings = self.find_offering_ids_from_details(region, instance_type, description, instance_tenancy,
+                offering_class, offering_type, duration)
 
-        return offerings
+            return offerings
+        else:
+            self.invalid_reserved_instances_offering_id(reserved_instances_offering_id)
+
+            offerings = self.find_offering_ids_from_ids(reserved_instances_offering_id[0])
+
+            return offerings
+            
 
     def get_file_name(self, region, instance_type):
 
@@ -1042,7 +1051,7 @@ class RIOfferingBackend(object):
 
         for index in index_of_offering_ids:
 
-            new_offering = ReservedInstanceOffering(
+            new_offering = ReservedInstancesOffering(
                 self,
                 id=offering_ids_table[index]["ReservedInstancesOfferings"],
                 instance_type=instance_type,
@@ -1064,6 +1073,26 @@ class RIOfferingBackend(object):
             offerings.append(new_offering)
 
         return offerings
+    
+    def find_offering_ids_from_ids(self, reserved_instances_offering_id):
+        file_name = None
+
+        index = self.polyhash_prime(reserved_instances_offering_id[0:8], 31, 12011, 2011)
+
+        # for when I split up the offerings index file into 100 sub files:
+        # index_file = int(np.ceil(index*100/2011))
+
+        offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/" +
+                "offering_ids_hash.csv"), dtype="U36", delimiter=",", skiprows=0)
+        
+        file_names_list = offering_ids_table[index]
+        for offering_hash in file_names_list:
+            if offering_hash[0:8] == reserved_instances_offering_id[0:8]:
+                file_name = offering_hash.split("|")[1]
+        
+        print(file_name)
+        return []
+
 
     def invalid_instance_type(self, instance_type):
         if instance_type is None:
@@ -1175,6 +1204,28 @@ class RIOfferingBackend(object):
 
         if min_duration != max_duration:
             raise InvalidParameterValueErrorDurationMisMatch(min_duration)
+    
+    def polyhash_prime(self, offering_id, a, p, m):
+        # hash function from https://startupnextdoor.com/spending-a-couple-days-on-hashing-functions/
+        hash = 0
+
+        for c in offering_id:
+            hash = (hash*a + ord(c)) % p
+
+        return numpyabs(hash % m)
+    
+    def invalid_reserved_instances_offering_id(self, reserved_instances_offering_id):
+        """
+        Checks if offering id format is valid. (not necessarily if the id exists)
+        """
+        
+        if reserved_instances_offering_id is None:
+            raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
+        
+        # currently only supports one offering id as input
+        if len(reserved_instances_offering_id) != 1:
+            raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
+
 
 
 class KeyPair(object):

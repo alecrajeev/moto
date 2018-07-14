@@ -32,8 +32,9 @@ class ReservedInstances(BaseResponse):
         offering_type = self._get_param("OfferingType")
         max_duration = self._get_param("MaxDuration")
         min_duration = self._get_param("MinDuration")
+        reserved_instances_offering_id = self._get_multi_param("ReservedInstancesOfferingId")
 
-        offerings = self.ec2_backend.get_offering_ids(instance_type=instance_type, description=product_description,
+        offerings = self.ec2_backend.get_offering_ids(reserved_instances_offering_id, instance_type=instance_type, description=product_description,
             instance_tenancy=instance_tenancy, offering_class=offering_class, offering_type=offering_type,
             max_duration=max_duration, min_duration=min_duration, region=region)
 
