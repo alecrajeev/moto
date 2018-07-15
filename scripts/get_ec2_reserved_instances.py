@@ -241,9 +241,9 @@ def get_regions(session):
     for i in np.arange(0,np.size(regions_output)):
         regions.append(regions_output[i]["RegionName"])
 
-    # return regions
+    return regions
     # return ["us-east-1", "us-east-2", "us-west-1"]
-    return ["ap-south-1"]
+    # return ["ap-south-1"]
 
 def get_instance_types(session):
 
@@ -260,9 +260,9 @@ def get_instance_types(session):
     for i in np.arange(0, np.size(offerings_per_instance_type)):
         instance_types.append(offerings_per_instance_type[i]["InstanceType"])
 
-    # return instance_types
+    return instance_types
     # return ["t2.nano", "m5.large", "r4.xlarge"]
-    return ["c5d.large"]
+    # return ["t2.nano"]
 
 
 def build_ec2_reserved_instances(session, regions, instance_types):
@@ -278,7 +278,7 @@ def build_ec2_reserved_instances(session, regions, instance_types):
         print("")
         print(region)
         for instance_type in instance_types:
-            print(instance_type)
+            # print(instance_type)
             client = session.client("ec2", region_name=region)
             NextToken = "start"
 
