@@ -242,7 +242,7 @@ def get_regions(session):
         regions.append(regions_output[i]["RegionName"])
 
     return regions
-    # return ["us-east-1", "us-east-2", "us-west-1"]
+    # return ["ap-south-1", "us-east-1", "us-east-2", "us-west-1"]
     # return ["ap-south-1"]
 
 def get_instance_types(session):
@@ -278,7 +278,7 @@ def build_ec2_reserved_instances(session, regions, instance_types):
         print("")
         print(region)
         for instance_type in instance_types:
-            # print(instance_type)
+            print(instance_type)
             RI_Table = None # resets RI_Table if a region has no RI's for that instance type
             client = session.client("ec2", region_name=region)
             NextToken = "start"
@@ -289,6 +289,8 @@ def build_ec2_reserved_instances(session, regions, instance_types):
                     break
             if RI_Table is not None:
                 save_reserved_instance_offerings(RI_Table, region, instance_type)
+            else:
+                print("No RIs for " + region + " " + instance_type)
     save_hash_table(Hash_Tables)
     print("Max Bin in Hash Table: " + str(np.max(Hash_Table_Count)))
     np.savetxt("Hash_Table_Count.csv", Hash_Table_Count, fmt="%s")
