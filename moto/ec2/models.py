@@ -1135,7 +1135,7 @@ class RIOfferingBackend(object):
 
     def get_index_adjusted(self, index_file, index):
 
-        return index-index_fill*100
+        return index-index_fill*20
 
     def invalid_instance_type(self, instance_type):
         if instance_type is None:

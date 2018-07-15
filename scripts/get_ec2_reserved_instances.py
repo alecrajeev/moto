@@ -7,7 +7,9 @@ import botocore
 from random import randint
 
 
-# index_file = int(np.floor(index*100/2011))
+hash_table_size = 2011 # prime number
+hash_table_divider = 100
+hash_table_bin = int(np.ceil(hash_table_size/hash_table_divider))
 
 def get_file_name(region, instance_type):
 
@@ -15,17 +17,22 @@ def get_file_name(region, instance_type):
 
 
 def get_index_of_hash_tables(index):
-    index_file = int(np.floor(index*100/2011))
+    index_file = int(np.floor(index/hash_table_bin))
 
     return index_file
 
+def get_index_hash_adjusted(index_file, index):
+
+    index_adjusted = (index % hash_table_bin)
+
+    return index_adjusted
 
 def save_hash_table(Hash_Tables):
 
     root_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']
                                        ).decode().strip()
 
-    for i in np.arange(0, 100):
+    for i in np.arange(0, len(Hash_Tables)):
         file_name = "offering_ids_hash_" + str(i) + ".csv"
 
         dest = os.path.join(root_dir, 'moto/ec2/resources/reserved_instances/hash_table/'
@@ -89,7 +96,7 @@ def hash_function(offering_id_head):
     normalized = char_array.view(np.uint32)
     sum = int(np.sum(normalized))
 
-    return sum % 2011
+    return sum % hash_table_size
 
 def polyhash_prime(offering_id, a, p, m):
     # hash function from https://startupnextdoor.com/spending-a-couple-days-on-hashing-functions/
@@ -100,9 +107,6 @@ def polyhash_prime(offering_id, a, p, m):
 
     return np.abs(hash % m)
 
-def get_index_hash_adjusted(index_file, index):
-
-    return index - index_file*100
 
 def add_to_hash_table(ri, region, Hash_Tables, Hash_Table_Count):
     offering_id = ri["ReservedInstancesOfferingId"]
@@ -113,7 +117,7 @@ def add_to_hash_table(ri, region, Hash_Tables, Hash_Table_Count):
 
     # i = hash_function(offering_id[0:8])
 
-    index = polyhash_prime(offering_id[0:8], 31, 12011, 2011)
+    index = polyhash_prime(offering_id[0:8], 31, 12011, hash_table_size)
 
     index_file = get_index_of_hash_tables(index)
 
@@ -231,8 +235,9 @@ def get_regions(session):
     for i in np.arange(0,np.size(regions_output)):
         regions.append(regions_output[i]["RegionName"])
 
-    return regions
+    # return regions
     # return ["us-east-1", "us-east-2", "us-west-1"]
+    return ["ap-south-1"]
 
 def get_instance_types(session):
 
@@ -249,20 +254,20 @@ def get_instance_types(session):
     for i in np.arange(0, np.size(offerings_per_instance_type)):
         instance_types.append(offerings_per_instance_type[i]["InstanceType"])
 
-    return instance_types
-    # return ["t2.nano", "m5.large", "r4.xlarge"]
+    # return instance_types
+    return ["t2.nano", "m5.large", "r4.xlarge"]
+    return ["t2.nano"]
 
 
 def build_ec2_reserved_instances(session, regions, instance_types):
     
     Hash_Tables = []
 
-    for i in np.arange(0, 101):
-        Hash_Tables.append(np.full(20, 450), "0", dtype="U35", order="C")
-    Hash_Table_Count = np.zeros(2011, dtype=np.int64)
+    for i in np.arange(0, hash_table_divider):
+        Hash_Tables.append(np.full((hash_table_bin, 450), "0", dtype="U35", order="C"))
+    Hash_Table_Count = np.zeros(hash_table_size, dtype=np.int64)
 
     RI_Table = None
-
     for region in regions:
         print("")
         print(region)
