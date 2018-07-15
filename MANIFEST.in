@@ -3,6 +3,7 @@ include requirements.txt requirements-dev.txt tox.ini
 include moto/ec2/resources/instance_types.json
 include moto/ec2/resources/amis.json
 include moto/ec2/resources/reserved_instances/*
+include moto/ec2/resources/instance_types_hash.csv
 include moto/ec2/resources/reserved_instances/ap_northeast_1/*.csv
 include moto/ec2/resources/reserved_instances/ap_southeast_1/*.csv
 include moto/ec2/resources/reserved_instances/eu_central_1/*.csv
