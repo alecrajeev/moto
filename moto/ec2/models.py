@@ -1007,7 +1007,6 @@ class RIOfferingBackend(object):
 
             return offerings
 
-
     def get_file_name(self, region, instance_type):
 
         return region.replace("-", "_") + "_" + instance_type.replace(".", "_") + ".csv"
@@ -1164,14 +1163,14 @@ class RIOfferingBackend(object):
 
         if not(file_name is None):
             i = self.get_loc_of_first_digit(file_name)
-            region = file_name[0:i].replace("_","-")
-            instance_type = file_name[i+1:len(file_name)].replace("_",".")
+            region = file_name[0:i].replace("_", "-")
+            instance_type = file_name[i + 1:len(file_name)].replace("_", ".")
             offerings = self.get_offerings_from_details(region, instance_type, reserved_instances_offering_id=reserved_instances_offering_id)
 
         return offerings
 
     def get_index_of_hash_tables(self, index):
-        index_file = int(floor(index/21))
+        index_file = int(floor(index / 21))
 
         return index_file
 
@@ -1367,7 +1366,7 @@ class RIOfferingBackend(object):
         hash = 0
 
         for c in offering_id:
-            hash = (hash*a + ord(c)) % p
+            hash = (hash * a + ord(c)) % p
 
         return numpyabs(hash % m)
 
@@ -1390,7 +1389,7 @@ class RIOfferingBackend(object):
         i = 0
         for c in file_name:
             if file_name[i].isdigit():
-                return i+1
+                return i + 1
             i += 1
 
 
