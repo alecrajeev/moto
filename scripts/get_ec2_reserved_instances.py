@@ -7,9 +7,9 @@ import botocore
 from random import randint
 
 
-hash_table_size = 2011 # prime number
-hash_table_divider = 100
-hash_table_bin = int(np.ceil(hash_table_size/hash_table_divider))
+hash_table_size = 2011 # prime number and size of hash table
+hash_table_divider = 100 # number of files to divide
+hash_table_bin = int(np.ceil(hash_table_size/hash_table_divider)) # number of lines in each file rounded up (21)
 
 def get_file_name(region, instance_type):
 
@@ -17,11 +17,17 @@ def get_file_name(region, instance_type):
 
 
 def get_index_of_hash_tables(index):
+    """
+    Index of the line if the hash table was one giant file.
+    """
     index_file = int(np.floor(index/hash_table_bin))
 
     return index_file
 
 def get_index_hash_adjusted(index_file, index):
+    """
+    Index with the main hash table broken up into 100 parts.
+    """
 
     index_adjusted = (index % hash_table_bin)
 
