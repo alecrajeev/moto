@@ -64,8 +64,7 @@ def save_reserved_instance_offerings(RI_Table, region, instance_type):
     dest = os.path.join(root_dir, 'moto/ec2/resources/reserved_instances/' + region.replace("-", "_") + "/"
                             + file_name)
 
-    np.savetxt(dest,RI_Table, fmt="%s", delimiter=",", newline="\n",
-               header=header, comments="")
+    np.savetxt(dest,RI_Table, fmt="%s", delimiter=",", newline="\n", header=header, comments="")
 
 
 def parse_individual_reserved_instance(ri_table, ri):
@@ -184,6 +183,7 @@ def get_offerings_check_rate_limit(client,instance_type, NextToken, RI_Table, re
 
 def get_offerings(client,instance_type, NextToken, RI_Table, region, Hash_Tables, Hash_Table_Count):
     offerings = 0
+    # print(RI_Table)
 
     if NextToken == "start":
         # first step in, no token givern
@@ -261,8 +261,8 @@ def get_instance_types(session):
         instance_types.append(offerings_per_instance_type[i]["InstanceType"])
 
     return instance_types
-    # return ["t2.nano", "m5.large", "r4.xlarge"]
-    # return ["t2.nano"]
+    # return ["t2.nano", "m5.large", "r4.xlarge", "c5d.large"]
+    # return ["c5d.large"]
 
 
 def build_ec2_reserved_instances(session, regions, instance_types):
@@ -279,6 +279,7 @@ def build_ec2_reserved_instances(session, regions, instance_types):
         print(region)
         for instance_type in instance_types:
             # print(instance_type)
+            RI_Table = None # resets RI_Table if a region has no RI's for that instance type
             client = session.client("ec2", region_name=region)
             NextToken = "start"
 
