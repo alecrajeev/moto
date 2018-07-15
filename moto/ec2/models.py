@@ -1006,6 +1006,7 @@ class RIOfferingBackend(object):
             offerings = self.find_offering_ids_from_ids(reserved_instances_offering_id[0])
 
             return offerings
+            
 
     def get_file_name(self, region, instance_type):
 
@@ -1058,7 +1059,7 @@ class RIOfferingBackend(object):
         except TypeError:
             # print("Type Error. Some strange error with numpy in python2")
             return []
-
+        
         reserved_instances_offering_id = kwargs.get("reserved_instances_offering_id")
         instance_tenancy = kwargs.get("instance_tenancy")
         description = kwargs.get("description")
@@ -1081,7 +1082,7 @@ class RIOfferingBackend(object):
             conditionals.append(offering_ids_table["OfferingType"] == offering_type)
         if not(duration is None):
             conditionals.append(offering_ids_table["Duration"] == duration)
-
+        
         # TODO: vectorize this even more
         conditionals_prod = full(shape(conditionals[0]), True)
         for i in range(0, len(conditionals)):
@@ -1141,7 +1142,7 @@ class RIOfferingBackend(object):
             offerings.append(new_offering)
 
         return offerings
-
+    
     def find_offering_ids_from_ids(self, reserved_instances_offering_id):
         file_name = None
         offerings = []
@@ -1154,23 +1155,23 @@ class RIOfferingBackend(object):
 
         offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/hash_table/" +
                 "offering_ids_hash_" + str(index_file) + ".csv"), dtype="U36", delimiter=",", skiprows=0)
-
+        
         file_names_list = offering_ids_table[index_adjusted]
         file_name = None
         for offering_hash in file_names_list:
             if offering_hash[0:8] == reserved_instances_offering_id[0:8]:
                 file_name = offering_hash.split("|")[1]
-
+        
         if not(file_name is None):
             i = self.get_loc_of_first_digit(file_name)
-            region = file_name[0:i].replace("_", "-")
-            instance_type = file_name[i + 1:len(file_name)].replace("_", ".")
+            region = file_name[0:i].replace("_","-")
+            instance_type = file_name[i+1:len(file_name)].replace("_",".")
             offerings = self.get_offerings_from_details(region, instance_type, reserved_instances_offering_id=reserved_instances_offering_id)
-
+        
         return offerings
 
     def get_index_of_hash_tables(self, index):
-        index_file = int(floor(index / 21))
+        index_file = int(floor(index/21))
 
         return index_file
 
@@ -1360,36 +1361,36 @@ class RIOfferingBackend(object):
 
         if min_duration != max_duration:
             raise InvalidParameterValueErrorDurationMisMatch(min_duration)
-
+    
     def polyhash_prime(self, offering_id, a, p, m):
         # hash function from https://startupnextdoor.com/spending-a-couple-days-on-hashing-functions/
         hash = 0
 
         for c in offering_id:
-            hash = (hash * a + ord(c)) % p
+            hash = (hash*a + ord(c)) % p
 
         return numpyabs(hash % m)
-
+    
     def invalid_reserved_instances_offering_id(self, reserved_instances_offering_id):
         """
         Checks if offering id format is valid. (not necessarily if the id exists)
         """
-
+        
         if reserved_instances_offering_id is None:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-
+        
         # currently only supports one offering id as input
         if len(reserved_instances_offering_id) != 1:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-
+        
         if len(reserved_instances_offering_id[0]) != 36:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-
+    
     def get_loc_of_first_digit(self, file_name):
         i = 0
         for c in file_name:
             if file_name[i].isdigit():
-                return i + 1
+                return i+1
             i += 1
 
 
