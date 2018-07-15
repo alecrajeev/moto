@@ -112,9 +112,6 @@ def polyhash_prime(offering_id, a, p, m):
 
     return np.abs(hash % m)
 
-def get_index_hash_adjusted(index_file, index):
-
-    return index - index_file*100
 
 def add_to_hash_table(ri, region, Hash_Tables, Hash_Table_Count):
     offering_id = ri["ReservedInstancesOfferingId"]

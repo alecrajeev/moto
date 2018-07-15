@@ -1179,7 +1179,7 @@ class RIOfferingBackend(object):
 
     def get_index_adjusted(self, index_file, index):
 
-        return index-index_fill*100
+        return index-index_fill*20
 
     def find_offering_ids_from_ids(self, reserved_instances_offering_id):
         file_name = None
