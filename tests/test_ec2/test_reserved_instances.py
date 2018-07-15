@@ -318,7 +318,7 @@ def test_reserved_instances_number_of_offerings():
 
 
 @mock_ec2
-def test_reserved_instnaces_no_offering_available():
+def test_reserved_instances_no_offering_available():
     client = boto3.client("ec2", region_name="us-east-2")    
 
     offerings = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Red Hat Enterprise Linux",
@@ -330,3 +330,45 @@ def test_reserved_instnaces_no_offering_available():
     # Currently AWS does not offer reserved instances with these criteria, so it should return an empty set.
 
     number_of_offerings.should.equal(0)
+
+
+@mock_ec2
+def test_reserved_instances_invalid_ri_offering():
+    client = boto3.client("ec2", region_name="us-east-1")
+
+    with assert_raises(ClientError) as err:
+        client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=["36239c57-8a19-48ca-ad88-f2399942b1"])
+
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
+def test_reserved_instances_no_offering_for_id():
+    client = boto3.client("ec2", region_name="us-east-1")
+
+    offerings = client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=["00000000-8a19-48ca-ad88-f2399942b18f"])
+
+    number_of_offerings = len(offerings["ReservedInstancesOfferings"])
+
+    number_of_offerings.should.equal(0)
+
+
+@mock_ec2
+def test_reserved_instances_valid_offering_id():
+    client = boto3.client("ec2", region_name="eu-central-1")
+
+    offering_id = "efa1c780-e056-48c1-97c3-7bd90d3686c2"
+
+    offerings = client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=[offering_id])
+
+    number_of_offerings = len(offerings["ReservedInstancesOfferings"])
+
+    number_of_offerings.should.equal(1)
+
+    offerings["ReservedInstancesOfferings"][0]["Duration"].should.equal("94608000")
+    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal("Windows with SQL Server Standard")
+    offerings["ReservedInstancesOfferings"][0]["InstanceTenancy"].should.equal("default")
+    offerings["ReservedInstancesOfferings"][0]["OfferingClass"].should.equal("standard")
+    offerings["ReservedInstancesOfferings"][0]["OfferingType"].should.equal("All Upfront")
+    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal("m4.large")
