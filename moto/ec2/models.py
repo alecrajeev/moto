@@ -153,6 +153,7 @@ OFFERING_TYPES = ["No Upfront", "Partial Upfront", "All Upfront"]
 
 VALID_DURATIONS = [31536000, 94608000]
 
+
 def utc_date_and_time():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
@@ -1258,10 +1259,9 @@ class RIOfferingBackend(object):
                 else:
                     if int(max_duration) < int(min_duration):
                         # I think technically AWS will allow this and just return [], but that is a pain to get exact
-                        raise InvalidParameterValueErrorMinDuration(min_duration)
+                        raise InvalidParameterValueErrorDurationMisMatch(min_duration)
                     else:
                         return [31536000, 94608000]
-
 
     def polyhash_prime(self, offering_id, a, p, m):
         # hash function from https://startupnextdoor.com/spending-a-couple-days-on-hashing-functions/
