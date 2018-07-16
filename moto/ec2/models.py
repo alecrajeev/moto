@@ -987,7 +987,7 @@ class RIOfferingBackend(object):
         else:
             self.invalid_reserved_instances_offering_id(reserved_instances_offering_id)
 
-            #TODO: make this work for multiple offering ids
+            # TODO: make this work for multiple offering ids
             offerings = self.find_offering_ids_from_ids(reserved_instances_offering_id)
 
             return offerings
@@ -1122,7 +1122,7 @@ class RIOfferingBackend(object):
             if not(file_name is None):
                 loc = self.get_loc_of_first_digit(file_name)
                 region = file_name[0:loc].replace("_", "-")
-                instance_type = file_name[loc+1:len(file_name)].replace("_", ".")
+                instance_type = file_name[loc + 1:len(file_name)].replace("_", ".")
                 offering = self.get_offerings_from_details(region, instance_type, reserved_instances_offering_id=offering_id)
                 if len(offering) > 0:
                     offerings.append(offering[0])
@@ -1272,7 +1272,7 @@ class RIOfferingBackend(object):
         if len(reserved_instances_offering_id) < 0:
             raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
 
-        # offering id must be exactly 36 characters        
+        # offering id must be exactly 36 characters
         for i in range(0, len(reserved_instances_offering_id)):
             if len(reserved_instances_offering_id[i]) != 36:
                 raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
