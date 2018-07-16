@@ -292,14 +292,14 @@ def test_reserved_instances_valid_product_description_linux():
     client = boto3.client("ec2", region_name="eu-central-1")
 
     test_product_description = "Linux/UNIX"
-    test_instance_type = "c5d.large"
+    test_instance_type = "c5.4xlarge"
 
     offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
                     InstanceTenancy="default", OfferingClass="standard",
                     OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
 
     offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
-    # offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
+    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
 
 
 @mock_ec2
@@ -372,3 +372,17 @@ def test_reserved_instances_valid_offering_id():
     offerings["ReservedInstancesOfferings"][0]["OfferingClass"].should.equal("standard")
     offerings["ReservedInstancesOfferings"][0]["OfferingType"].should.equal("All Upfront")
     offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal("m4.large")
+
+
+@mock_ec2
+def test_reserved_instances_offering_special_instance_type():
+    client = boto3.client("ec2", region_name="us-east-1")
+    test_product_description = "Linux/UNIX"
+    test_instance_type = "c5d.large"
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
+                    InstanceTenancy="default", OfferingClass="standard",
+                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
+    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
