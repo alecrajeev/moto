@@ -75,8 +75,6 @@ def test_reserved_instances_valid_offering_class():
                     InstanceTenancy="dedicated", OfferingClass=offering_class_test,
                     OfferingType="Partial Upfront", MaxDuration=94608000, MinDuration=94608000)
 
-    print(offerings["ReservedInstancesOfferings"])
-
     offerings["ReservedInstancesOfferings"][0]["OfferingClass"].should.equal(offering_class_test)
 
 
@@ -90,8 +88,6 @@ def test_reserved_instances_valid_offering_class_convertible():
     offerings = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows",
                     InstanceTenancy="dedicated", OfferingClass=offering_class_test,
                     OfferingType="Partial Upfront", MaxDuration=94608000, MinDuration=94608000)
-
-    print(offerings["ReservedInstancesOfferings"][0])
 
     offerings["ReservedInstancesOfferings"][0]["OfferingClass"].should.equal(offering_class_test)
 
@@ -412,7 +408,6 @@ def test_multiple_ri_offerings():
 
     len(offerings["ReservedInstancesOfferings"]).should.equal(2)
     for offering in offerings["ReservedInstancesOfferings"]:
-        isin(offering["ReservedInstancesOfferingId"], test_offering_ids).should.equal(True)
         if offering["ReservedInstancesOfferingId"] == "10f99c79-bf18-43ec-be00-4eca1a83f8cf":
             offering["InstanceType"].should.equal("c5d.large")
         if offering["ReservedInstancesOfferingId"] == "37090450-1f56-45cc-8d8a-c06ec2f2b11f":
