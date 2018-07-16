@@ -140,6 +140,18 @@ AMIS = json.load(
 )
 INSTANCE_TYPES_HASH_TABLE = loadtxt(resource_filename(__name__, 'resources/instance_types_hash.csv'), dtype="U20", delimiter=",")
 
+PRODUCT_DESCRIPTIONS = ["Linux/UNIX", "SUSE Linux", "Red Hat Enterprise Linux",
+        "Windows", "Windows with SQL Server Standard", "Windows with SQL Server Web",
+        "Windows with SQL Server Enterprise", "Windows BYOL", "Linux with SQL Server Web",
+        "Linux with SQL Server Standard", "Linux with SQL Server Enterprise"]
+
+INSTANCE_TENANCIES = ["default", "dedicated"]
+
+OFFERING_CLASSES = ["standard", "convertible"]
+
+OFFERING_TYPES = ["No Upfront", "Partial Upfront", "All Upfront"]
+
+VALID_DURATIONS = [31536000, 94608000]
 
 def utc_date_and_time():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -973,12 +985,11 @@ class RIOfferingBackend(object):
             self.invalid_instance_tenancy(instance_tenancy)
             self.invalid_max_duration(max_duration)
             self.invalid_min_duration(min_duration)
-            self.invalid_duration(max_duration, min_duration)
             self.invalid_offering_type(offering_type)
             self.invalid_offering_class(offering_class)
             self.invalid_product_description(description)
 
-            duration = int(max_duration)
+            duration = self.get_duration(max_duration, min_duration)
             offerings = self.get_offerings_from_details(region, instance_type, instance_tenancy=instance_tenancy,
                 duration=duration, offering_type=offering_type, offering_class=offering_class,
                 description=description)
@@ -1065,7 +1076,7 @@ class RIOfferingBackend(object):
         if not(offering_type is None):
             conditionals.append(offering_ids_table["OfferingType"] == offering_type)
         if not(duration is None):
-            conditionals.append(offering_ids_table["Duration"] == duration)
+            conditionals.append(isin(offering_ids_table["Duration"], duration))
 
         # TODO: vectorize this even more
         conditionals_prod = full(shape(conditionals[0]), True)
@@ -1172,84 +1183,85 @@ class RIOfferingBackend(object):
         These are the available (non-vpc) reserved instances as of 7/7/2018.
         TODO: write a script that pulls all of the available product descriptions
         """
-        valid_products = ["Linux/UNIX", "SUSE Linux", "Red Hat Enterprise Linux",
-        "Windows", "Windows with SQL Server Standard", "Windows with SQL Server Web",
-        "Windows with SQL Server Enterprise", "Windows BYOL", "Linux with SQL Server Web",
-        "Linux with SQL Server Standard", "Linux with SQL Server Enterprise"]
 
         if product_description is None:
-            raise InvalidParameterValueErrorProductDescription(product_description)
+            return
 
-        if not(product_description in valid_products):
+        if not(product_description in PRODUCT_DESCRIPTIONS):
             raise InvalidParameterValueErrorProductDescription(product_description)
 
     def invalid_instance_tenancy(self, instance_tenancy):
         """
         TODO: impelement host ri (different api calls)
         """
-        valid_tenancies = ["default", "dedicated"]
 
         if instance_tenancy is None:
-            raise InvalidParameterValueErrorInstanceTenancy(instance_tenancy)
+            return
 
-        if not(instance_tenancy in valid_tenancies):
+        if not(instance_tenancy in INSTANCE_TENANCIES):
             raise InvalidParameterValueErrorInstanceTenancy(instance_tenancy)
 
     def invalid_offering_class(self, offering_class):
 
-        valid_offering_classes = ["standard", "convertible"]
-
         if offering_class is None:
-            raise InvalidParameterValueErrorOfferingClass(offering_class)
+            return
 
-        if not(offering_class in valid_offering_classes):
+        if not(offering_class in OFFERING_CLASSES):
             raise InvalidParameterValueErrorOfferingClass(offering_class)
 
     def invalid_offering_type(self, offering_type):
 
-        valid_offering_types = ["No Upfront", "Partial Upfront", "All Upfront"]
-
         if offering_type is None:
-            raise InvalidParameterValueErrorOfferingType(offering_type)
+            return
 
-        if not(offering_type in valid_offering_types):
+        if not(offering_type in OFFERING_TYPES):
             raise InvalidParameterValueErrorOfferingType(offering_type)
 
     def invalid_max_duration(self, max_duration):
 
+        if max_duration is None:
+            return
+
         max_duration = int(max_duration)
 
-        valid_durations = [94608000, 31536000]
-
-        if max_duration is None:
-            raise InvalidParameterValueErrorMaxDuration(max_duration)
-
-        if not(max_duration in valid_durations):
+        if not(max_duration in VALID_DURATIONS):
             raise InvalidParameterValueErrorMaxDuration(max_duration)
 
     def invalid_min_duration(self, min_duration):
 
-        min_duration = int(min_duration)
-
-        valid_durations = [94608000, 31536000]
-
         if min_duration is None:
-            raise InvalidParameterValueErrorMinDuration(min_duration)
-
-        if not(min_duration in valid_durations):
-            raise InvalidParameterValueErrorMinDuration(min_duration)
-
-    def invalid_duration(self, max_duration, min_duration):
-        """
-        Just to make it easier and to only return the smallest number of offering ids,
-        max_duration must equal min_duration
-        """
+            return
 
         min_duration = int(min_duration)
-        max_duration = int(max_duration)
 
-        if min_duration != max_duration:
-            raise InvalidParameterValueErrorDurationMisMatch(min_duration)
+        if not(min_duration in VALID_DURATIONS):
+            raise InvalidParameterValueErrorMinDuration(min_duration)
+
+    def get_duration(self, max_duration, min_duration):
+        if max_duration is None:
+            if min_duration is None:
+                return None
+            else:
+                if int(min_duration) == 94608000:
+                    return [94608000]
+                else:
+                    return [31536000, 94608000]
+        else:
+            if min_duration is None:
+                if int(max_duration) == 31536000:
+                    return [31536000]
+                else:
+                    return [31536000, 94608000]
+            else:
+                if int(max_duration) == int(min_duration):
+                    return [int(min_duration)]
+                else:
+                    if int(max_duration) < int(min_duration):
+                        # I think technically AWS will allow this and just return [], but that is a pain to get exact
+                        raise InvalidParameterValueErrorMinDuration(min_duration)
+                    else:
+                        return [31536000, 94608000]
+
 
     def polyhash_prime(self, offering_id, a, p, m):
         # hash function from https://startupnextdoor.com/spending-a-couple-days-on-hashing-functions/

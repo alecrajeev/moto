@@ -15,6 +15,7 @@ from boto.exception import EC2ResponseError, EC2ResponseError
 from botocore.exceptions import ClientError
 from freezegun import freeze_time
 import sure  # noqa
+from numpy import isin
 
 from moto import mock_ec2
 from tests.helpers import requires_boto_gte
@@ -372,6 +373,7 @@ def test_reserved_instances_valid_offering_id():
     offerings["ReservedInstancesOfferings"][0]["OfferingClass"].should.equal("standard")
     offerings["ReservedInstancesOfferings"][0]["OfferingType"].should.equal("All Upfront")
     offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal("m4.large")
+    offerings["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"].should.equal(offering_id)
 
 
 @mock_ec2
@@ -386,3 +388,86 @@ def test_reserved_instances_offering_special_instance_type():
 
     offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
     offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
+
+
+@mock_ec2
+def test_multiple_ri_offerings():
+    client = boto3.client("ec2", region_name="ca-central-1")
+    test_offering_ids = ["37090450-1f56-45cc-8d8a-c06ec2f2b11f", "10f99c79-bf18-43ec-be00-4eca1a83f8cf"]
+
+    offerings = client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=test_offering_ids)
+
+    len(offerings["ReservedInstancesOfferings"]).should.equal(2)
+    for offering in offerings["ReservedInstancesOfferings"]:
+        isin(offering["ReservedInstancesOfferings"], test_offering_ids).should.equal(True)
+        if offering["ReservedInstancesOfferingId"] == "10f99c79-bf18-43ec-be00-4eca1a83f8cf":
+            offering["InstanceType"].should.equal("c5d.large")
+        if offering["ReservedInstancesOfferingId"] == "37090450-1f56-45cc-8d8a-c06ec2f2b11f":
+            offering["InstanceType"].should.equal("d2.4xlarge")
+
+
+@mock_ec2
+def test_multiple_tenancies():
+    client = boto3.client("ec2", region_name="ap-south-1")
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows with SQL Server Standard", OfferingClass="standard", OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
+    # without tenancy specified there are 6 possibilities (1 region + 2 availability zone)*2 = 6
+    len(offerings["ReservedInstancesOfferings"]).should.equal(6)
+
+
+@mock_ec2
+def test_multiple_offering_classes():
+    client = boto3.client("ec2", region_name="ap-south-1")
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows with SQL Server Standard", InstanceTenancy="dedicated", OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    len(offerings["ReservedInstancesOfferings"]).should.equal(6)
+
+
+@mock_ec2
+def test_multiple_offering_types():
+    client = boto3.client("ec2", region_name="ap-south-1")
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows with SQL Server Standard", InstanceTenancy="dedicated", OfferingClass="standard", MaxDuration=94608000, MinDuration=94608000)
+
+    len(offerings["ReservedInstancesOfferings"]).should.equal(9)
+
+
+@mock_ec2
+def test_max_duration_less_than_min_duration():
+    client = boto3.client("ec2", region_name="ap-south-1")
+
+    # invalid because max duration is less than min duration
+    test_max_duration = 31536000
+    test_min_duration = 94608000
+
+    with assert_raises(ClientError) as err:
+        client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows",
+                    InstanceTenancy="dedicated", OfferingClass="standard",
+                    OfferingType=offering_type_test, MaxDuration=test_max_duration, MinDuration=test_min_duration)
+    # I think technically AWS will allow this and just return [], but that is a pain to get exact
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
+def test_max_duration_at_min_value():
+    client = boto3.client("ec2", region_name="ap-south-1")
+
+    test_max_duration = 31536000
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows with SQL Server Standard", InstanceTenancy="dedicated", OfferingType="All Upfront", OfferingClass="standard", MaxDuration=test_max_duration)
+    # 3 because there since 31536000 is the max value there is only one set of three
+    len(offerings["ReservedInstancesOfferings"]).should.equal(3)
+    offerings["ReservedInstancesOfferings"][0]["Duration"].should.equal(test_max_duration)
+
+
+@mock_ec2
+def test_min_duration_at_min_value():
+    client = boto3.client("ec2", region_name="ap-south-1")
+
+    test_min_duration = 31536000
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows with SQL Server Standard", InstanceTenancy="dedicated", OfferingType="All Upfront", OfferingClass="standard", MinDuration=test_min_duration)
+    # 6 because there since 31536000 is the min value there is 6 sets
+    len(offerings["ReservedInstancesOfferings"]).should.equal(6)
