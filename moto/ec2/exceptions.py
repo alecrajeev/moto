@@ -399,7 +399,7 @@ class InvalidParameterValueErrorDurationMisMatch(EC2ClientError):
     def __init__(self, parameter_value):
         super(InvalidParameterValueErrorDurationMisMatch, self).__init__(
             "InvalidParameterValue",
-            "Invalid value \'{0}\' for MinDuration. Current Implementation requires MinDuration must equal MaxDuration."
+            "Invalid value \'{0}\' for MinDuration. Current Implementation requires MinDuration must less than or equal to MaxDuration."
             .format(parameter_value)
         )
 
