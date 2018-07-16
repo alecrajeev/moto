@@ -399,7 +399,7 @@ def test_multiple_ri_offerings():
 
     len(offerings["ReservedInstancesOfferings"]).should.equal(2)
     for offering in offerings["ReservedInstancesOfferings"]:
-        isin(offering["ReservedInstancesOfferings"], test_offering_ids).should.equal(True)
+        isin(offering["ReservedInstancesOfferingId"], test_offering_ids).should.equal(True)
         if offering["ReservedInstancesOfferingId"] == "10f99c79-bf18-43ec-be00-4eca1a83f8cf":
             offering["InstanceType"].should.equal("c5d.large")
         if offering["ReservedInstancesOfferingId"] == "37090450-1f56-45cc-8d8a-c06ec2f2b11f":
@@ -444,7 +444,7 @@ def test_max_duration_less_than_min_duration():
     with assert_raises(ClientError) as err:
         client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows",
                     InstanceTenancy="dedicated", OfferingClass="standard",
-                    OfferingType=offering_type_test, MaxDuration=test_max_duration, MinDuration=test_min_duration)
+                    OfferingType="All Upfront", MaxDuration=test_max_duration, MinDuration=test_min_duration)
     # I think technically AWS will allow this and just return [], but that is a pain to get exact
     e = err.exception
     e.response["Error"]["Code"].should.equal("InvalidParameterValue")
