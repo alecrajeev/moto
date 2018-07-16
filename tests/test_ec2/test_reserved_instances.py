@@ -395,7 +395,7 @@ def test_multiple_ri_offerings():
     len(offerings["ReservedInstancesOfferings"]).should.equal(2)
     for offering in offerings["ReservedInstancesOfferings"]:
         if offering["ReservedInstancesOfferingId"] == "10f99c79-bf18-43ec-be00-4eca1a83f8cf":
-            offering["InstanceType"].should.equal("c5d.large")
+            offering["InstanceType"].should.equal("c5d.2xlarge")
         if offering["ReservedInstancesOfferingId"] == "37090450-1f56-45cc-8d8a-c06ec2f2b11f":
             offering["InstanceType"].should.equal("d2.4xlarge")
 
