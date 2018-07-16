@@ -989,12 +989,11 @@ class RIOfferingBackend(object):
             self.invalid_instance_tenancy(instance_tenancy)
             self.invalid_max_duration(max_duration)
             self.invalid_min_duration(min_duration)
-            self.invalid_duration(max_duration, min_duration)
             self.invalid_offering_type(offering_type)
             self.invalid_offering_class(offering_class)
             self.invalid_product_description(description)
 
-            duration = int(max_duration)
+            duration = self.get_duration(max_duration, min_duration)
             offerings = self.get_offerings_from_details(region, instance_type, instance_tenancy=instance_tenancy,
                 duration=duration, offering_type=offering_type, offering_class=offering_class,
                 description=description)
@@ -1081,7 +1080,7 @@ class RIOfferingBackend(object):
         if not(offering_type is None):
             conditionals.append(offering_ids_table["OfferingType"] == offering_type)
         if not(duration is None):
-            conditionals.append(offering_ids_table["Duration"] == duration)
+            conditionals.append(isin(offering_ids_table["Duration"], duration))
 
         # TODO: vectorize this even more
         conditionals_prod = full(shape(conditionals[0]), True)
@@ -1332,38 +1331,10 @@ class RIOfferingBackend(object):
                 else:
                     if int(max_duration) < int(min_duration):
                         # I think technically AWS will allow this and just return [], but that is a pain to get exact
-                        raise InvalidParameterValueErrorDurationMisMatch(min_duration)
+                        raise InvalidParameterValueErrorMinDuration(min_duration)
                     else:
                         return [31536000, 94608000]
 
-    def polyhash_prime(self, offering_id, a, p, m):
-        # hash function from https://startupnextdoor.com/spending-a-couple-days-on-hashing-functions/
-        hash = 0
-
-        for c in offering_id:
-            hash = (hash * a + ord(c)) % p
-
-        return numpyabs(hash % m)
-
-    def invalid_reserved_instances_offering_id(self, reserved_instances_offering_id):
-        """
-        Checks if offering id format is valid. (not necessarily if the id exists)
-        """
-
-        if reserved_instances_offering_id is None:
-            raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-
-        # must have at least one offering id
-        if len(reserved_instances_offering_id) < 0:
-            raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-
-        # offering id must be exactly 36 characters
-        for i in range(0, len(reserved_instances_offering_id)):
-            if len(reserved_instances_offering_id[i]) != 36:
-                raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
-
-        if min_duration != max_duration:
-            raise InvalidParameterValueErrorDurationMisMatch(min_duration)
 
     def polyhash_prime(self, offering_id, a, p, m):
         # hash function from https://startupnextdoor.com/spending-a-couple-days-on-hashing-functions/
