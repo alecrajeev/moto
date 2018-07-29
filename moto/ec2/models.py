@@ -1003,7 +1003,7 @@ class RIOfferingBackend(object):
             self.invalid_reserved_instances_offering_id(reserved_instances_offering_id)
 
             # TODO: make this work for multiple offering ids
-            offerings = self.find_offering_ids_from_ids(reserved_instances_offering_id)
+            offerings = self.find_offering_ids_from_ids(reserved_instances_offering_id, kwargs.get("region"))
 
             return offerings
 
@@ -1142,7 +1142,7 @@ class RIOfferingBackend(object):
 
         return offerings
 
-    def find_offering_ids_from_ids(self, reserved_instances_offering_id):
+    def find_offering_ids_from_ids(self, reserved_instances_offering_id, region):
         file_name = None
         offerings = []
         for i in range(0, len(reserved_instances_offering_id)):
@@ -1154,8 +1154,10 @@ class RIOfferingBackend(object):
 
             index_adjusted = self.get_index_adjusted(index)
 
-            offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/hash_table/" +
-                    "offering_ids_hash_" + str(index_file) + ".csv"), dtype="U36", delimiter=",", skiprows=0)
+            folder_name = region.replace("-", "_")
+
+            offering_ids_table = loadtxt(resource_filename(__name__, "resources/reserved_instances/" + folder_name +
+                    "/offering_ids_hash_" + str(index_file) + ".csv"), dtype="U36", delimiter=",", skiprows=0)
 
             file_names_list = offering_ids_table[index_adjusted]
             file_name = None
