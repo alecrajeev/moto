@@ -273,7 +273,7 @@ def build_ec2_reserved_instances(session, regions, instance_types):
     for k in np.arange(0, np.size(regions)):
         Hash_Tables = []
         for i in np.arange(0, hash_table_divider):
-            Hash_Tables.append(np.full((hash_table_bin, 450), "0", dtype="U35", order="C"))
+            Hash_Tables.append(np.full((hash_table_bin, 90), "0", dtype="U35", order="C"))
         Region_Hash_list.append(Hash_Tables)
 
     Hash_Table_Count = np.zeros((np.size(regions), hash_table_size), dtype=np.int64)
