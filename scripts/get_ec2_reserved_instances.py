@@ -8,7 +8,7 @@ from random import randint
 
 
 hash_table_size = 2011 # prime number and size of hash table
-hash_table_divider = 100 # number of files to divide
+hash_table_divider = 10 # number of files to divide
 hash_table_bin = int(np.ceil(hash_table_size/hash_table_divider)) # number of lines in each file rounded up (21)
 
 def get_file_name(region, instance_type):
@@ -33,18 +33,21 @@ def get_index_hash_adjusted(index_file, index):
 
     return index_adjusted
 
-def save_hash_table(Hash_Tables):
+def save_hash_table(Region_Hash_list, regions):
 
     root_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']
                                        ).decode().strip()
 
-    for i in np.arange(0, len(Hash_Tables)):
-        file_name = "offering_ids_hash_" + str(i) + ".csv"
+    for r in np.arange(0, len(Region_Hash_list)):
+        for i in np.arange(0, len(Region_Hash_list[r])):
+            file_name = "offering_ids_hash_" + str(i) + ".csv"
+            region = regions[r]
+            folder_name = regions[r].replace("-", "_")
 
-        dest = os.path.join(root_dir, 'moto/ec2/resources/reserved_instances/hash_table/'
-                            + file_name)
+            dest = os.path.join(root_dir, "moto/ec2/resources/reserved_instances/" + folder_name + "/"
+                                + file_name)
 
-        np.savetxt(dest, Hash_Tables[i], fmt="%s", delimiter=",", newline="\n")
+            np.savetxt(dest, Region_Hash_list[r][i], fmt="%s", delimiter=",", newline="\n")
 
 
 def save_reserved_instance_offerings(RI_Table, region, instance_type):
@@ -112,14 +115,12 @@ def polyhash_prime(offering_id, a, p, m):
     return np.abs(hash % m)
 
 
-def add_to_hash_table(ri, region, Hash_Tables, Hash_Table_Count):
+def add_to_hash_table(ri, region, Region_Hash_list, Hash_Table_Count, r):
     offering_id = ri["ReservedInstancesOfferingId"]
     instance_type = ri["InstanceType"]
 
     file_name = get_file_name(region, instance_type)
     ref_value = offering_id[0:8] + "|" + file_name
-
-    # i = hash_function(offering_id[0:8])
 
     index = polyhash_prime(offering_id[0:8], 31, 12011, hash_table_size)
 
@@ -127,18 +128,19 @@ def add_to_hash_table(ri, region, Hash_Tables, Hash_Table_Count):
 
     index_adjusted = get_index_hash_adjusted(index_file, index)
 
-    Hash_Table_Count[index] += 1
+    Hash_Table_Count[r, index] += 1
 
-    check = np.where(Hash_Tables[index_file][index_adjusted] == "0")[0]
+    # used to find the next available empty space in hash table
+    check = np.where(Region_Hash_list[r][index_file][index_adjusted] == "0")[0]
     if np.size(check) > 0:
         j = check[0]
-        Hash_Tables[index_file][index_adjusted][j] = ref_value
+        Region_Hash_list[r][index_file][index_adjusted][j] = ref_value
     else:
-        print("Hash Table Has Run Out of Space")
+        print("Hash Table " + str(r) + " (" + str(region) + ") has run rut of space")
 
 
-def parse_reserved_instance_offerings(ri_offerings, region, Hash_Tables,
-                                      Hash_Table_Count):
+def parse_reserved_instance_offerings(ri_offerings, region, Region_Hash_list,
+                                      Hash_Table_Count, r):
 
     offerings_count = np.size(ri_offerings)
 
@@ -164,23 +166,23 @@ def parse_reserved_instance_offerings(ri_offerings, region, Hash_Tables,
     ri_table_partial = np.zeros(offerings_count, dtype=ri_table_dtype)
     for i in np.arange(0, offerings_count):
         parse_individual_reserved_instance(ri_table_partial[i], ri_offerings[i])
-        add_to_hash_table(ri_offerings[i], region, Hash_Tables, Hash_Table_Count)
+        add_to_hash_table(ri_offerings[i], region, Region_Hash_list, Hash_Table_Count, r)
 
     return ri_table_partial
 
 
-def get_offerings_check_rate_limit(client,instance_type, NextToken, RI_Table, region, Hash_Tables, Hash_Table_Count):
+def get_offerings_check_rate_limit(client,instance_type, NextToken, RI_Table, region, Region_Hash_list, Hash_Table_Count, r):
     try:
-        return get_offerings(client,instance_type, NextToken, RI_Table, region, Hash_Tables, Hash_Table_Count)
+        return get_offerings(client,instance_type, NextToken, RI_Table, region, Region_Hash_list, Hash_Table_Count, r)
     except botocore.exceptions.ClientError as e:
         timeout = 60
         print("[Warning] API rate exceeded, throttling back for 60 seconds")
         sleep(timeout)
 
-        return get_offerings(client,instance_type, NextToken, RI_Table, region, Hash_Tables, Hash_Table_Count)
+        return get_offerings(client,instance_type, NextToken, RI_Table, region, Region_Hash_list, Hash_Table_Count, r)
 
 
-def get_offerings(client,instance_type, NextToken, RI_Table, region, Hash_Tables, Hash_Table_Count):
+def get_offerings(client,instance_type, NextToken, RI_Table, region, Region_Hash_list, Hash_Table_Count, r):
     offerings = 0
     # print(RI_Table)
 
@@ -192,7 +194,7 @@ def get_offerings(client,instance_type, NextToken, RI_Table, region, Hash_Tables
         if "ReservedInstancesOfferings" in offerings:
             temp_table = parse_reserved_instance_offerings(
                             offerings["ReservedInstancesOfferings"],
-                            region, Hash_Tables, Hash_Table_Count)
+                            region, Region_Hash_list, Hash_Table_Count, r)
         else:
             return RI_Table, "end"
 
@@ -214,7 +216,7 @@ def get_offerings(client,instance_type, NextToken, RI_Table, region, Hash_Tables
         if "ReservedInstancesOfferings" in offerings:
             temp_table = parse_reserved_instance_offerings(
                             offerings["ReservedInstancesOfferings"],
-                            region, Hash_Tables, Hash_Table_Count)
+                            region, Region_Hash_list, Hash_Table_Count, r)
         else:
             return RI_Table, "end"
 
@@ -241,7 +243,7 @@ def get_regions(session):
         regions.append(regions_output[i]["RegionName"])
 
     return regions
-    # return ["ap-south-1", "us-east-1", "us-east-2", "us-west-1"]
+    # return ["ap-south-1", "us-east-1"]
     # return ["ap-south-1"]
 
 def get_instance_types(session):
@@ -266,13 +268,18 @@ def get_instance_types(session):
 
 def build_ec2_reserved_instances(session, regions, instance_types):
     
-    Hash_Tables = []
+    Region_Hash_list = []
 
-    for i in np.arange(0, hash_table_divider):
-        Hash_Tables.append(np.full((hash_table_bin, 450), "0", dtype="U35", order="C"))
-    Hash_Table_Count = np.zeros(hash_table_size, dtype=np.int64)
+    for k in np.arange(0, np.size(regions)):
+        Hash_Tables = []
+        for i in np.arange(0, hash_table_divider):
+            Hash_Tables.append(np.full((hash_table_bin, 450), "0", dtype="U35", order="C"))
+        Region_Hash_list.append(Hash_Tables)
+
+    Hash_Table_Count = np.zeros((np.size(regions), hash_table_size), dtype=np.int64)
 
     RI_Table = None
+    r = 0 # used to keep track of regions
     for region in regions:
         print("")
         print(region)
@@ -283,14 +290,15 @@ def build_ec2_reserved_instances(session, regions, instance_types):
             NextToken = "start"
 
             while True == True:
-                RI_Table, NextToken = get_offerings_check_rate_limit(client,instance_type, NextToken, RI_Table, region, Hash_Tables, Hash_Table_Count)
+                RI_Table, NextToken = get_offerings_check_rate_limit(client,instance_type, NextToken, RI_Table, region, Region_Hash_list, Hash_Table_Count, r)
                 if NextToken == "end":
                     break
             if RI_Table is not None:
                 save_reserved_instance_offerings(RI_Table, region, instance_type)
             else:
                 print("No RIs for " + region + " " + instance_type)
-    save_hash_table(Hash_Tables)
+        r += 1
+    save_hash_table(Region_Hash_list, regions)
     print("Max Bin in Hash Table: " + str(np.max(Hash_Table_Count)))
     np.savetxt("Hash_Table_Count.csv", Hash_Table_Count, fmt="%s")
 
