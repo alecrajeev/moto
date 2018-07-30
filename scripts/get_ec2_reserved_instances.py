@@ -267,7 +267,11 @@ def get_instance_types(session):
 
 
 def build_ec2_reserved_instances(session, regions, instance_types):
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f13d10a78307f705fc81182bccecd712ea7606a9
     Region_Hash_list = []
 
     for k in np.arange(0, np.size(regions)):

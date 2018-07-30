@@ -20,10 +20,10 @@ from boto.ec2.reservedinstance import ReservedInstancesOffering as BotoReservedI
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.spotinstancerequest import SpotInstanceRequest as BotoSpotRequest
 from boto.ec2.launchspecification import LaunchSpecification
-from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape
+from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape, floor
 =======
 from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape, floor
->>>>>>> Split up 20 mb hash table to increase speed
+>>>>>>> f13d10a78307f705fc81182bccecd712ea7606a9
 
 from moto.compat import OrderedDict
 from moto.core import BaseBackend
