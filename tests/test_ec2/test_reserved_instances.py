@@ -299,14 +299,13 @@ def test_reserved_instances_valid_product_description_suse_linux():
 
 @mock_ec2
 def test_reserved_instances_valid_product_description_linux():
-    client = boto3.client("ec2", region_name="eu-central-1")
+    client = boto3.client("ec2", region_name="ap-south-1")
 
     test_product_description = "Linux/UNIX"
-    test_instance_type = "c5.4xlarge"
+    test_instance_type = "c5.large"
 
     offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
-                    InstanceTenancy="default", OfferingClass="standard",
-                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
+                    InstanceTenancy="default", OfferingClass="standard", OfferingType="All Upfront")
 
     offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
     offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
