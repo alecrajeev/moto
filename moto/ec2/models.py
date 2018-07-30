@@ -1172,13 +1172,13 @@ class RIOfferingBackend(object):
         return offerings
 
     def get_index_of_hash_tables(self, index):
-        index_file = int(floor(index / 21))
+        index_file = int(floor(index / 202))
 
         return index_file
 
     def get_index_adjusted(self, index):
 
-        index_adjusted = (index % 21)
+        index_adjusted = (index % 202)
 
         return index_adjusted
 
