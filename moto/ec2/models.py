@@ -999,7 +999,6 @@ class RIOfferingBackend(object):
         else:
             self.invalid_reserved_instances_offering_id(reserved_instances_offering_id)
 
-            # TODO: make this work for multiple offering ids
             offerings = self.find_offering_ids_from_ids(reserved_instances_offering_id, kwargs.get("region"))
 
             return offerings
