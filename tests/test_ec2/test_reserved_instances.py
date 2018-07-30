@@ -298,6 +298,20 @@ def test_reserved_instances_valid_product_description_suse_linux():
 
 
 @mock_ec2
+def test_reserved_instances_valid_product_description_linux():
+    client = boto3.client("ec2", region_name="eu-central-1")
+
+    test_product_description = "Linux/UNIX"
+    test_instance_type = "c5.4xlarge"
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
+                    InstanceTenancy="default", OfferingClass="standard", OfferingType="All Upfront")
+
+    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
+    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
+
+
+@mock_ec2
 def test_reserved_instances_number_of_offerings():
     client = boto3.client("ec2", region_name="us-east-2")
 
@@ -444,95 +458,7 @@ def test_max_duration_less_than_min_duration():
 
 
 @mock_ec2
-def test_reserved_instances_valid_product_description():
-    client = boto3.client("ec2", region_name="us-east-2")
-
-    test_product_description = "Windows with SQL Server Web"
-
-    offerings = client.describe_reserved_instances_offerings(InstanceType="m5.large", ProductDescription=test_product_description,
-                    InstanceTenancy="default", OfferingClass="standard",
-                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
-
-    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
-
-
-@mock_ec2
-def test_reserved_instances_valid_product_description_sql_server():
-    client = boto3.client("ec2", region_name="ap-south-1")
-
-    test_product_description = "Windows with SQL Server Enterprise"
-    test_instance_type = "r4.8xlarge"
-
-    offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
-                    InstanceTenancy="default", OfferingClass="standard",
-                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
-
-    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
-    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
-
-
-@mock_ec2
-def test_reserved_instances_valid_product_description_red_hat_linux():
-    client = boto3.client("ec2", region_name="ap-south-1")
-
-    test_product_description = "Red Hat Enterprise Linux"
-    test_instance_type = "r4.4xlarge"
-
-    offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
-                    InstanceTenancy="default", OfferingClass="standard",
-                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
-
-    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
-    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
-
-
-@mock_ec2
-def test_reserved_instances_valid_product_description_linux_with_sql_server():
-    client = boto3.client("ec2", region_name="ap-south-1")
-
-    test_product_description = "Linux with SQL Server Enterprise"
-    test_instance_type = "r4.4xlarge"
-
-    offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
-                    InstanceTenancy="default", OfferingClass="standard",
-                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
-
-    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
-    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
-
-
-@mock_ec2
-def test_reserved_instances_valid_product_description_windows_byol():
-    client = boto3.client("ec2", region_name="us-west-1")
-
-    test_product_description = "Windows BYOL"
-    test_instance_type = "t2.nano"
-
-    offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
-                    InstanceTenancy="default", OfferingClass="standard",
-                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
-
-    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
-    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
-
-
-@mock_ec2
-def test_reserved_instances_valid_product_description_suse_linux():
-    client = boto3.client("ec2", region_name="eu-west-1")
-
-    test_product_description = "SUSE Linux"
-    test_instance_type = "x1.16xlarge"
-
-    offerings = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description,
-                    InstanceTenancy="default", OfferingClass="standard",
-                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
-
-    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
-    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
-
-
-@mock_ec2
-def test_reserved_instances_valid_product_description_linux():
+def test_reserved_instances_no_instance_type_in_region():
     client = boto3.client("ec2", region_name="eu-central-1")
 
     test_product_description = "Linux/UNIX"
@@ -542,23 +468,8 @@ def test_reserved_instances_valid_product_description_linux():
                     InstanceTenancy="default", OfferingClass="standard",
                     OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
 
-    offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
-    offerings["ReservedInstancesOfferings"][0]["InstanceType"].should.equal(test_instance_type)
-
-
-@mock_ec2
-def test_reserved_instances_number_of_offerings():
-    client = boto3.client("ec2", region_name="us-east-2")
-
-    offerings = client.describe_reserved_instances_offerings(InstanceType="m5.large", ProductDescription="Windows",
-                    InstanceTenancy="default", OfferingClass="standard",
-                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
-
-    number_of_offerings = len(offerings["ReservedInstancesOfferings"])
-
-    # You can purchase reserved instances in two availability zones out of 3 plus an additional regional one.
-    # This could change if they increase the number of availability zones in Ohio
-    number_of_offerings.should.equal(3)
+    number_of_offerings = len(offerings)
+    number_of_offerings.should.equal(0)
 
 
 @mock_ec2

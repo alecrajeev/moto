@@ -1084,34 +1084,6 @@ class RIOfferingBackend(object):
         for i in range(0, len(conditionals)):
             conditionals_prod *= conditionals[i]
 
-        reserved_instances_offering_id = kwargs.get("reserved_instances_offering_id")
-        instance_tenancy = kwargs.get("instance_tenancy")
-        description = kwargs.get("description")
-        offering_class = kwargs.get("offering_class")
-        offering_type = kwargs.get("offering_type")
-        duration = kwargs.get("duration")
-
-        # conditional lists of boolean numpy arrays
-        conditionals = []
-
-        if not(reserved_instances_offering_id is None):
-            conditionals.append(isin(offering_ids_table["ReservedInstancesOfferings"], reserved_instances_offering_id))
-        if not(instance_tenancy is None):
-            conditionals.append(offering_ids_table["InstanceTenancy"] == instance_tenancy)
-        if not(description is None):
-            conditionals.append(offering_ids_table["ProductDescription"] == description)
-        if not(offering_class is None):
-            conditionals.append(offering_ids_table["OfferingClass"] == offering_class)
-        if not(offering_type is None):
-            conditionals.append(offering_ids_table["OfferingType"] == offering_type)
-        if not(duration is None):
-            conditionals.append(isin(offering_ids_table["Duration"], duration))
-
-        # TODO: vectorize this even more
-        conditionals_prod = full(shape(conditionals[0]), True)
-        for i in range(0, len(conditionals)):
-            conditionals_prod *= conditionals[i]
-
         index_of_offering_ids = where(conditionals_prod)[0]
 
         for index in index_of_offering_ids:
