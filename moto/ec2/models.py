@@ -20,7 +20,6 @@ from boto.ec2.reservedinstance import ReservedInstancesOffering as BotoReservedI
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from boto.ec2.spotinstancerequest import SpotInstanceRequest as BotoSpotRequest
 from boto.ec2.launchspecification import LaunchSpecification
-from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape
 from numpy import array, loadtxt, size, isin, any as numpyany, uint32, sum as numpysum, where, abs as numpyabs, full, shape, floor
 
 from moto.compat import OrderedDict
@@ -1171,17 +1170,6 @@ class RIOfferingBackend(object):
                     offerings.append(offering[0])
 
         return offerings
-
-    def get_index_of_hash_tables(self, index):
-        index_file = int(floor(index / 21))
-
-        return index_file
-
-    def get_index_adjusted(self, index):
-
-        index_adjusted = (index % 21)
-
-        return index_adjusted
 
     def get_index_of_hash_tables(self, index):
         index_file = int(floor(index / 21))
