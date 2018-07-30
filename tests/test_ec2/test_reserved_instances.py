@@ -588,7 +588,7 @@ def test_reserved_instance_offering_id_invalid_region():
 
 @mock_ec2
 def test_reserved_instance_offering_id_valid_region():
-    client = boto3.client("ec2", region_name="ca-central-1")
+    client = boto3.client("ec2", region_name="eu-central-1")
 
     offerings = client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=["3818be01-41a1-4ed2-8f2c-75cbd0abf7cc"])
 
