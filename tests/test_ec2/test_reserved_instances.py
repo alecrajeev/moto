@@ -574,3 +574,23 @@ def test_reserved_instances_number_of_offerings():
     # You can purchase reserved instances in two availability zones out of 3 plus an additional regional one.
     # This could change if they increase the number of availability zones in Ohio
     number_of_offerings.should.equal(3)
+
+
+@mock_ec2
+def test_reserved_instance_offering_id_invalid_region():
+    client = boto3.clinet("ec2", region_name="us-east-1")
+
+    offerings = client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=["3818be01-41a1-4ed2-8f2c-75cbd0abf7cc"])
+
+    number_of_offerings = len(offerings["ReservedInstancesOfferings"])
+    number_of_offerings.should.equal(0)
+
+
+@mock_ec2
+def test_reserved_instance_offering_id_valid_region():
+    client = boto3.clinet("ec2", region_name="ca-central-1")
+
+    offerings = client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=["3818be01-41a1-4ed2-8f2c-75cbd0abf7cc"])
+
+    number_of_offerings = len(offerings["ReservedInstancesOfferings"])
+    number_of_offerings.should.equal(1)
