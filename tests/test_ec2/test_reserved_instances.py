@@ -468,7 +468,7 @@ def test_reserved_instances_no_instance_type_in_region():
                     InstanceTenancy="default", OfferingClass="standard",
                     OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
 
-    number_of_offerings = len(offerings)
+    number_of_offerings = len(offerings["ReservedInstancesOfferings"])
     number_of_offerings.should.equal(0)
 
 
