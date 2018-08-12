@@ -269,7 +269,7 @@ def test_reserved_instances_valid_product_description_linux_with_sql_server():
 
 @mock_ec2
 def test_reserved_instances_valid_product_description_windows_byol():
-    client = boto3.client("ec2", region_name="us-west-1")
+    client = boto3.client("ec2", region_name="eu-west-1")
 
     test_product_description = "Windows BYOL"
     test_instance_type = "t2.nano"
@@ -648,7 +648,7 @@ def test_describe_reserved_instances_start_and_end_time_three_years():
 
 @mock_ec2
 def test_describe_reserved_instance_variable_offering_class():
-    client = boto3.client("ec2", region="us-west-1")
+    client = boto3.client("ec2", region_name="eu-west-1")
 
     offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
                             OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
@@ -666,7 +666,7 @@ def test_describe_reserved_instance_variable_offering_class():
 
 @mock_ec2
 def test_describe_reserved_instance_variable_offering_type():
-    client = boto3.client("ec2", region="us-west-1")
+    client = boto3.client("ec2", region_name="eu-west-1")
 
     offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
                             OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
@@ -684,7 +684,7 @@ def test_describe_reserved_instance_variable_offering_type():
 
 @mock_ec2
 def test_describe_reserved_instance_variable_offering_class_and_type():
-    client = boto3.client("ec2", region="us-west-1")
+    client = boto3.client("ec2", region_name="eu-west-1")
 
     offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
                             OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
@@ -706,7 +706,7 @@ def test_describe_reserved_instance_variable_offering_class_and_type():
 
 @mock_ec2
 def test_describe_reserved_instance_invalid_offering_class():
-    client = boto3.client("ec2", region="us-west-1")
+    client = boto3.client("ec2", region_name="eu-west-1")
 
     offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
                             OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
@@ -722,7 +722,7 @@ def test_describe_reserved_instance_invalid_offering_class():
 
 @mock_ec2
 def test_describe_reserved_instance_invalid_offering_type():
-    client = boto3.client("ec2", region="us-west-1")
+    client = boto3.client("ec2", region_name="eu-west-1")
 
     offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
                             OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
