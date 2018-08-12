@@ -38,6 +38,39 @@ def test_reserved_instances_invalid_instance_type():
 
 
 @mock_ec2
+def test_reserved_instances_invalid_instance_type_invalid_family_format():
+    client = boto3.client("ec2", region_name="us-east-2")
+
+    # invalid instance type
+    instance_type_test = "m5.xx.large"
+
+    with assert_raises(ClientError) as err:
+            client.describe_reserved_instances_offerings(InstanceType=instance_type_test, ProductDescription="Windows",
+                    InstanceTenancy="dedicated", OfferingClass="standard",
+                    OfferingType="Partial Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
+def test_reserved_instances_invalid_instance_type_not_on_hash_table():
+    client = boto3.client("ec2", region_name="us-east-2")
+
+    # invalid instance type
+    instance_type_test = "t.6"
+
+    with assert_raises(ClientError) as err:
+            client.describe_reserved_instances_offerings(InstanceType=instance_type_test, ProductDescription="Windows",
+                    InstanceTenancy="dedicated", OfferingClass="standard",
+                    OfferingType="Partial Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+
+@mock_ec2
 def test_reserved_instances_valid_instance_type():
     client = boto3.client("ec2", region_name="us-east-2")
 
@@ -220,6 +253,22 @@ def test_reserved_instances_valid_product_description():
                     OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
 
     offerings["ReservedInstancesOfferings"][0]["ProductDescription"].should.equal(test_product_description)
+
+
+@mock_ec2
+def test_reserved_instances_valid_product_description_un_specified():
+    client = boto3.client("ec2", region_name="us-east-2")
+
+    offerings = client.describe_reserved_instances_offerings(InstanceType="m5.large",
+                    InstanceTenancy="default", OfferingClass="standard",
+                    OfferingType="All Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    pd = offerings["ReservedInstancesOfferings"][0]["ProductDescription"]
+    test_true = pd in ["Linux/UNIX", "SUSE Linux", "Red Hat Enterprise Linux",
+        "Windows", "Windows with SQL Server Standard", "Windows with SQL Server Web",
+        "Windows with SQL Server Enterprise", "Windows BYOL", "Linux with SQL Server Web",
+        "Linux with SQL Server Standard", "Linux with SQL Server Enterprise"]
+    test_true.should.equal(True)
 
 
 @mock_ec2
@@ -453,6 +502,35 @@ def test_max_duration_less_than_min_duration():
                     InstanceTenancy="dedicated", OfferingClass="standard",
                     OfferingType="All Upfront", MaxDuration=test_max_duration, MinDuration=test_min_duration)
     # I think technically AWS will allow this and just return [], but that is a pain to get exact
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
+def test_invalid_min_duration():
+    client = boto3.client("ec2", region_name="ap-south-1")
+
+    # invalid because max duration is less than min duration
+    test_min_duration = 54608000
+
+    with assert_raises(ClientError) as err:
+        client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows",
+                    InstanceTenancy="dedicated", OfferingClass="standard",
+                    OfferingType="All Upfront", MinDuration=test_min_duration)
+
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
+def test_invalid_offering_id_list():
+    client = boto3.client("ec2", region_name="ap-south-1")
+
+    test_ri_offering_id_list = []
+
+    with assert_raises(ClientError) as err:
+        client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=test_ri_offering_id_list)
+
     e = err.exception
     e.response["Error"]["Code"].should.equal("InvalidParameterValue")
 
@@ -731,6 +809,22 @@ def test_describe_reserved_instance_invalid_offering_type():
 
     with assert_raises(ClientError) as err:
         client.describe_reserved_instances(OfferingType="Alll Upfront")
+    
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
+def test_describe_reserved_instance_invalid_reserved_instance_id():
+    client = boto3.client("ec2", region_name="eu-west-1")
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+    
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    with assert_raises(ClientError) as err:
+        client.describe_reserved_instances(ReservedInstancesIds=["0000000000000"])
     
     e = err.exception
     e.response["Error"]["Code"].should.equal("InvalidParameterValue")
