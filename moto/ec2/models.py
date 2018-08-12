@@ -985,14 +985,14 @@ class ReservedInstanceBackend(object):
             if self.reserved_instances[r].region == region:
                 if offering_class is None:
                     if offering_type is None:
-                        if reserved_instances_ids is None:
+                        if reserved_instances_ids is None or reserved_instances_ids == []:
                             reserved_instances.append(self.reserved_instances[r])
                         else:
                             if self.reserved_instances[r].id in reserved_instances_ids:
                                 reserved_instances.append(self.reserved_instances[r])
                     else:
                         if self.reserved_instances[r].offering_type == offering_type:
-                            if reserved_instances_ids is None:
+                            if reserved_instances_ids is None or reserved_instances_ids == []:
                                 reserved_instances.append(self.reserved_instances[r])
                             else:
                                 if self.reserved_instances[r].id in reserved_instances_ids:
@@ -1000,14 +1000,14 @@ class ReservedInstanceBackend(object):
                 else:
                     if self.reserved_instances[r].offering_class == offering_class:
                         if offering_type is None:
-                            if reserved_instances_ids is None:
+                            if reserved_instances_ids is None or reserved_instances_ids == []:
                                 reserved_instances.append(self.reserved_instances[r])
                             else:
                                 if self.reserved_instances[r].id in reserved_instances_ids:
                                     reserved_instances.append(self.reserved_instances[r])
                         else:
                             if self.reserved_instances[r].offering_type == offering_type:
-                                if reserved_instances_ids is None:
+                                if reserved_instances_ids is None or reserved_instances_ids == []:
                                     reserved_instances.append(self.reserved_instances[r])
                                 else:
                                     if self.reserved_instances[r].id in reserved_instances_ids:

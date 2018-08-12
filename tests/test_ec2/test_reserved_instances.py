@@ -523,24 +523,6 @@ def test_invalid_min_duration():
 
 
 @mock_ec2
-def test_invalid_offering_id_list():
-    """
-    Technically AWS allows you to do this, but I am going to limit this for now.
-    If I were to allow this, then you would just get every offering and I haven't implemented
-    tokenization yet.
-    """
-    client = boto3.client("ec2", region_name="ap-south-1")
-
-    test_ri_offering_id_list = []
-
-    with assert_raises(ClientError) as err:
-        client.describe_reserved_instances_offerings(ReservedInstancesOfferingIds=test_ri_offering_id_list)
-
-    e = err.exception
-    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
-
-
-@mock_ec2
 def test_reserved_instances_no_instance_type_in_region():
     client = boto3.client("ec2", region_name="eu-central-1")
 
