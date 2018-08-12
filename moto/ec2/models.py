@@ -948,7 +948,7 @@ class ReservedInstance(BotoReservedInstance):
         self.marketplace = offering.marketplace
         self.state = "active"
         self.start = datetime.utcnow()
-        self.end = self.start + timedelta(seconds=self.duration)
+        self.end = self.start + timedelta(seconds=int(self.duration))
         # the above can likely be improved by using inheritance properly
 
 
