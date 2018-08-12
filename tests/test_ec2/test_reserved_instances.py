@@ -591,7 +591,7 @@ def test_describe_reserved_instance_instance_attributes():
 def test_describe_reserved_instance_offering_options():
     client = boto3.client("ec2", region_name="eu-west-1")
 
-    test_offering_class = "All Upfront"
+    test_offering_class = "standard"
     test_offering_type = "No Upfront"
 
     offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
