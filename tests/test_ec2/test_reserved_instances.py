@@ -839,21 +839,36 @@ def test_describe_reserved_instance_invalid_reserved_instance_id():
 def test_describe_reserved_instance_variable_offering_class_and_type_and_ri_id():
     client = boto3.client("ec2", region_name="eu-west-1")
 
+    real_offering_type = "No Upfront"
+    fake_offering_type = "All Upfront"
+
+    real_offering_class = "standard"
+    fake_offering_class = "convertible"
+
     offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
-                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+                            OfferingClass=real_offering_class, OfferingType=real_offering_type, MaxDuration=31536000, MinDuration=31536000)
     
     purchase_ri = client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
 
     real_ri_id = purchase_ri["ReservedInstancesId"]
+    fake_ri_id = "f3506846-a02e-41bd-b113-4b39fb943127"
 
     reserved_instances1 = client.describe_reserved_instances()
-    reserved_instances2 = client.describe_reserved_instances(OfferingClass="standard", OfferingType="No Upfront", ReservedInstancesIds=[ri_id])
-    reserved_instances3 = client.describe_reserved_instances(OfferingClass="standard", OfferingType="All Upfront")
-    reserved_instances4 = client.describe_reserved_instances(OfferingClass="convertible", OfferingType="No Upfront")
-    reserved_instances5 = client.describe_reserved_instances(OfferingClass="convertible", OfferingType="All Upfront")
+    reserved_instances2 = client.describe_reserved_instances(OfferingClass=real_offering_class, OfferingType=real_offering_type, ReservedInstancesIds=[real_ri_id])
+    reserved_instances3 = client.describe_reserved_instances(OfferingClass=real_offering_class, OfferingType=real_offering_type, ReservedInstancesIds=[fake_ri_id])
+    reserved_instances4 = client.describe_reserved_instances(OfferingClass=real_offering_class, OfferingType=fake_offering_type, ReservedInstancesIds=[real_ri_id])
+    reserved_instances5 = client.describe_reserved_instances(OfferingClass=real_offering_class, OfferingType=fake_offering_type, ReservedInstancesIds=[fake_ri_id])
+    reserved_instances6 = client.describe_reserved_instances(OfferingClass=fake_offering_class, OfferingType=real_offering_type, ReservedInstancesIds=[real_ri_id])
+    reserved_instances7 = client.describe_reserved_instances(OfferingClass=fake_offering_class, OfferingType=real_offering_type, ReservedInstancesIds=[fake_ri_id])
+    reserved_instances8 = client.describe_reserved_instances(OfferingClass=fake_offering_class, OfferingType=fake_offering_type, ReservedInstancesIds=[real_ri_id])
+    reserved_instances9 = client.describe_reserved_instances(OfferingClass=fake_offering_class, OfferingType=fake_offering_type, ReservedInstancesIds=[fake_ri_id])
 
     len(reserved_instances1["ReservedInstances"]).should.equal(1)
     len(reserved_instances2["ReservedInstances"]).should.equal(1)
     len(reserved_instances3["ReservedInstances"]).should.equal(0)
     len(reserved_instances4["ReservedInstances"]).should.equal(0)
     len(reserved_instances5["ReservedInstances"]).should.equal(0)
+    len(reserved_instances6["ReservedInstances"]).should.equal(0)
+    len(reserved_instances7["ReservedInstances"]).should.equal(0)
+    len(reserved_instances8["ReservedInstances"]).should.equal(0)
+    len(reserved_instances9["ReservedInstances"]).should.equal(0)

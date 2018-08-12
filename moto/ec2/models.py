@@ -1082,7 +1082,7 @@ class RIOfferingBackend(object):
 
     def get_offering_ids(self, reserved_instances_offering_id, **kwargs):
         temp_ri_offering_backend = RIOfferingBackend()
-        if reserved_instances_offering_id is None or reserved_instances_offering_id = []:
+        if reserved_instances_offering_id is None or reserved_instances_offering_id == []:
             instance_type = kwargs.get("instance_type")
             max_duration = kwargs.get("max_duration")
             min_duration = kwargs.get("min_duration")
