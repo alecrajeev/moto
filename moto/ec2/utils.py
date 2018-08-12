@@ -177,7 +177,7 @@ def random_ipv6_cidr():
 
 
 def random_reserved_instance_id():
-    return uuid.uuid4()
+    return str(uuid.uuid4())
 
 
 def generate_route_id(route_table_id, cidr_block):
