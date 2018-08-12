@@ -521,3 +521,85 @@ def test_purchase_invalid_reserved_instance_in_wrong_region():
     
     e = err.exception
     e.response["Error"]["Code"].should.equal("InvalidReservedInstancesOfferingId")
+
+
+@mock_ec2
+def test_describe_reserved_instance():
+    client = boto3.client("ec2", region_name="eu-central-1")
+
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId="3818be01-41a1-4ed2-8f2c-75cbd0abf7cc", InstanceCount=1)
+
+    reserved_instance = client.describe_reserved_instances()
+
+    len(reserved_instance["ReservedInstances"]).should.equal(1)
+    reserved_instance["ReservedInstanes"][0]["InstanceCount"].should.equal(1)
+
+
+@mock_ec2
+def test_describe_reserved_instance_multiple_instane_count():
+    client = boto3.client("ec2", region_name="eu-central-1")
+
+    test_instance_count = 5
+
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId="3818be01-41a1-4ed2-8f2c-75cbd0abf7cc", InstanceCount=test_instance_count)
+
+    reserved_instance = client.describe_reserved_instances()
+
+    len(reserved_instance["ReservedInstances"]).should.equal(1)
+    reserved_instance["ReservedInstanes"][0]["InstanceCount"].should.equal(test_instance_count)
+
+
+@mock_ec2
+def test_describe_reserved_instance_multiple_reserved_instances():
+    client = boto3.client("ec2", region_name="us-west-2")
+
+    offering1 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Windows",
+                    OfferingType="All Upfront", OfferingClass="standard", InstanceTenancy="default")
+    
+    offering2 = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Linux/UNIX",
+                    OfferingType="No Upfront", OfferingClass="convertible", InstanceTenancy="dedicated")
+    
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering1["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering2["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    reserved_instances = client.describe_reserved_instances()
+
+    len(reserved_instances["ReservedInstances"]).should.equal(2)
+
+
+@mock_ec2
+def test_describe_reserved_instance_instance_attributes():
+    client = boto3.client("ec2", region_name="us-east-2")
+
+    test_instance_type = "r4.4xlarge"
+    test_product_description = "Red Hat Enterprise Linux"
+    test_instance_tenancy = "default"
+
+
+    offering = client.describe_reserved_instances_offerings(InstanceType=test_instance_type, ProductDescription=test_product_description, InstanceTenancy=test_instance_tenancy)
+
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    reserved_instances = client.describe_reserved_instances()
+
+    reserved_instances["ReservedInstances"][0]["InstanceType"].should.equal(test_instance_type)
+    reserved_instances["ReservedInstances"][0]["ProductDescription"].should.equal(test_product_description)
+    reserved_instances["ReservedInstances"][0]["InstanceTenancy"].should.equal(test_instance_tenancy)
+
+
+@mock_ec2
+def test_describe_reserved_instance_offering_options():
+    client = boto3.client("ec2", region_name="eu-west-1")
+
+    test_offering_class = "All Upfront"
+    test_offering_type = "No Upfront"
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass=test_offering_class, OfferingType=test_offering_type)
+
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    reserved_instances = client.describe_reserved_instances()
+
+    reserved_instances["ReservedInstances"][0]["OfferingClass"].should.equal(test_offering_class)
+    reserved_instances["ReservedInstances"][0]["OfferingType"].should.equal(test_offering_type)
