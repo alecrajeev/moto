@@ -52,6 +52,22 @@ def test_run_instances_invalid_instance_type():
 
 
 @mock_ec2
+def test_run_instances_invalid_instance_type2():
+    client = boto3.client("ec2", region_name="us-east-2")
+
+    image_id = "ami-1234abcd"
+
+    # this may exist in the future, so this could be valid in the year 2050 or something
+    instance_type = "t6P.nano"
+
+    with assert_raises(ClientError) as err:
+        client.run_instances(InstanceType=instance_type, ImageId=image_id, MinCount=1, MaxCount=1)
+    
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
 def test_default_run_instances():
     client = boto3.client("ec2", region_name="us-east-2")
 

@@ -58,7 +58,7 @@ def test_reserved_instances_invalid_instance_type_not_on_hash_table():
     client = boto3.client("ec2", region_name="us-east-2")
 
     # invalid instance type
-    instance_type_test = "t.6"
+    instance_type_test = "t6P.nano"
 
     with assert_raises(ClientError) as err:
             client.describe_reserved_instances_offerings(InstanceType=instance_type_test, ProductDescription="Windows",
@@ -606,12 +606,14 @@ def test_describe_reserved_instance_multiple_instane_count():
 
     test_instance_count = 5
 
-    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId="3818be01-41a1-4ed2-8f2c-75cbd0abf7cc", InstanceCount=test_instance_count)
+    purchase_ri = client.purchase_reserved_instances_offering(ReservedInstancesOfferingId="3818be01-41a1-4ed2-8f2c-75cbd0abf7cc", InstanceCount=test_instance_count)
+    ri_id = purchase_ri["ReservedInstancesId"]
 
     reserved_instance = client.describe_reserved_instances()
 
     len(reserved_instance["ReservedInstances"]).should.equal(1)
     reserved_instance["ReservedInstances"][0]["InstanceCount"].should.equal(test_instance_count)
+    reserved_instance["ReservedInstances"][0]["ReservedInstancesId"].should.equal(ri_id)
 
 
 @mock_ec2
@@ -854,3 +856,45 @@ def test_describe_reserved_instance_variable_offering_class_and_type_and_ri_id()
     len(reserved_instances7["ReservedInstances"]).should.equal(0)
     len(reserved_instances8["ReservedInstances"]).should.equal(0)
     len(reserved_instances9["ReservedInstances"]).should.equal(0)
+    reserved_instances1["ReservedInstances"][0]["ReservedInstancesId"].should.equal(real_ri_id)
+    reserved_instances2["ReservedInstances"][0]["ReservedInstancesId"].should.equal(real_ri_id)
+
+
+@mock_ec2
+def test_describe_reserved_instance_variable_offering_class_and_type_and_ri_id2():
+    client = boto3.client("ec2", region_name="eu-west-1")
+
+    real_offering_type = "No Upfront"
+    fake_offering_type = "All Upfront"
+
+    real_offering_class = "standard"
+    fake_offering_class = "convertible"
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass=real_offering_class, OfferingType=real_offering_type, MaxDuration=31536000, MinDuration=31536000)
+    
+    purchase_ri = client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    real_ri_id = purchase_ri["ReservedInstancesId"]
+    fake_ri_id = "f3506846-a02e-41bd-b113-4b39fb943127"
+
+    reserved_instances1 = client.describe_reserved_instances()
+    reserved_instances2 = client.describe_reserved_instances(OfferingClass=real_offering_class, ReservedInstancesIds=[real_ri_id])
+    reserved_instances3 = client.describe_reserved_instances(OfferingClass=real_offering_class, ReservedInstancesIds=[fake_ri_id])
+    reserved_instances4 = client.describe_reserved_instances(OfferingClass=fake_offering_class, ReservedInstancesIds=[real_ri_id])
+    reserved_instances5 = client.describe_reserved_instances(OfferingType=real_offering_class, ReservedInstancesIds=[real_ri_id])
+    reserved_instances6 = client.describe_reserved_instances(OfferingType=real_offering_class, ReservedInstancesIds=[fake_ri_id])
+    reserved_instances7 = client.describe_reserved_instances(OfferingType=fake_offering_class, ReservedInstancesIds=[real_ri_id])
+    reserved_instances8 = client.describe_reserved_instances(OfferingType=fake_offering_class, ReservedInstancesIds=[fake_ri_id])
+
+    len(reserved_instances1["ReservedInstances"]).should.equal(1)
+    len(reserved_instances2["ReservedInstances"]).should.equal(1)
+    len(reserved_instances3["ReservedInstances"]).should.equal(0)
+    len(reserved_instances4["ReservedInstances"]).should.equal(0)
+    len(reserved_instances5["ReservedInstances"]).should.equal(1)
+    len(reserved_instances6["ReservedInstances"]).should.equal(0)
+    len(reserved_instances7["ReservedInstances"]).should.equal(0)
+    len(reserved_instances8["ReservedInstances"]).should.equal(0)
+    reserved_instances1["ReservedInstances"][0]["ReservedInstancesId"].should.equal(real_ri_id)
+    reserved_instances2["ReservedInstances"][0]["ReservedInstancesId"].should.equal(real_ri_id)
+    reserved_instances5["ReservedInstances"][0]["ReservedInstancesId"].should.equal(real_ri_id)

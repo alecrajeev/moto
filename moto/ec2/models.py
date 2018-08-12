@@ -900,7 +900,7 @@ class InstanceBackend(object):
         """
 
         if instance_type is None:
-            raise InvalidParameterValueErrorInstanceType(instance_type)
+            return
 
         family_split = instance_type.split(".")
 
