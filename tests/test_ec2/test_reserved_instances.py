@@ -565,7 +565,7 @@ def test_describe_reserved_instance_multiple_reserved_instances():
     reserved_instances = client.describe_reserved_instances()
 
     len(reserved_instances["ReservedInstances"]).should.equal(2)
-    reserved_instances["ReservedInstances"][0]["ProductDescription"].should.equla("Windows")
+    reserved_instances["ReservedInstances"][0]["ProductDescription"].should.equal("Windows")
 
 
 @mock_ec2
