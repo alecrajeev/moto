@@ -556,7 +556,7 @@ def test_describe_reserved_instance_multiple_reserved_instances():
     offering1 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Windows",
                     OfferingType="All Upfront", OfferingClass="standard", InstanceTenancy="default")
     
-    offering2 = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Linux/UNIX",
+    offering2 = client.describe_reserved_instances_offerings(InstanceType="m4.large", ProductDescription="Windows",
                     OfferingType="No Upfront", OfferingClass="convertible", InstanceTenancy="dedicated")
     
     client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering1["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
@@ -565,6 +565,7 @@ def test_describe_reserved_instance_multiple_reserved_instances():
     reserved_instances = client.describe_reserved_instances()
 
     len(reserved_instances["ReservedInstances"]).should.equal(2)
+    reserved_instances["ReservedInstances"][0]["ProductDescription"].should.equla("Windows")
 
 
 @mock_ec2
@@ -603,3 +604,30 @@ def test_describe_reserved_instance_offering_options():
 
     reserved_instances["ReservedInstances"][0]["OfferingClass"].should.equal(test_offering_class)
     reserved_instances["ReservedInstances"][0]["OfferingType"].should.equal(test_offering_type)
+
+
+@mock_ec2
+def test_describe_reserved_instances_start_and_end_time():
+    client = boto3.client("ec2", region_name="ap-northeast-1")
+
+    offering1 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+
+    offering2 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering1["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering2["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    reserved_instances = client.describe_reserved_instances()
+
+    current_time = datetime.datetime.utcnow()
+
+    reserved_instances["ReservedInstances"][0]["Start"].year.should.equal(current_time.year)
+    reserved_instances["ReservedInstances"][0]["Start"].month.should.equal(current_time.month)
+    reserved_instances["ReservedInstances"][0]["Start"].day.should.equal(current_time.day)
+    reserved_instances["ReservedInstances"][0]["End"].year.should.equal(current_time.year+1)
+    reserved_instances["ReservedInstances"][0]["End"].month.should.equal(current_time.month)
+    reserved_instances["ReservedInstances"][1]["Start"].year.should.equal(current_time.year)
+    reserved_instances["ReservedInstances"][1]["End"].year.should.equal(current_time.year+3)
+    reserved_instances["ReservedInstances"][1]["End"].month.should.equal(current_time.month)

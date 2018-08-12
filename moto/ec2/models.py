@@ -982,7 +982,19 @@ class ReservedInstanceBackend(object):
 
         for r in self.reserved_instances:
             if self.reserved_instances[r].region == region:
-                reserved_instances.append(self.reserved_instances[r])
+                if offering_class is None:
+                    if offering_type is None:
+                        reserved_instances.append(self.reserved_instances[r])
+                    else:
+                        if self.reserved_instances[r].offering_type == offering_type:
+                            reserved_instances.append(self.reserved_instances[r])
+                else:
+                    if self.reserved_instances[r].offering_class == offering_class:
+                        if offering_type is None:
+                            reserved_instances.append(self.reserved_instances[r])
+                        else:
+                            if self.reserved_instances[r].offering_type == offering_type:
+                                reserved_instances.append(self.reserved_instances[r])
 
         return reserved_instances
 
