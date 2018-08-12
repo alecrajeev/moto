@@ -607,17 +607,13 @@ def test_describe_reserved_instance_offering_options():
 
 
 @mock_ec2
-def test_describe_reserved_instances_start_and_end_time():
+def test_describe_reserved_instances_start_and_end_time_one_year():
     client = boto3.client("ec2", region_name="ap-northeast-1")
 
     offering1 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
                             OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
 
-    offering2 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
-                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=94608000, MinDuration=94608000)
-
     client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering1["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
-    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering2["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
 
     reserved_instances = client.describe_reserved_instances()
 
@@ -628,6 +624,113 @@ def test_describe_reserved_instances_start_and_end_time():
     reserved_instances["ReservedInstances"][0]["Start"].day.should.equal(current_time.day)
     reserved_instances["ReservedInstances"][0]["End"].year.should.equal(current_time.year+1)
     reserved_instances["ReservedInstances"][0]["End"].month.should.equal(current_time.month)
-    reserved_instances["ReservedInstances"][1]["Start"].year.should.equal(current_time.year)
-    reserved_instances["ReservedInstances"][1]["End"].year.should.equal(current_time.year+3)
-    reserved_instances["ReservedInstances"][1]["End"].month.should.equal(current_time.month)
+
+
+@mock_ec2
+def test_describe_reserved_instances_start_and_end_time_three_years():
+    client = boto3.client("ec2", region_name="ap-northeast-1")
+
+    offering2 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=94608000, MinDuration=94608000)
+
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering2["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    reserved_instances = client.describe_reserved_instances()
+
+    current_time = datetime.datetime.utcnow()
+
+    reserved_instances["ReservedInstances"][0]["Start"].year.should.equal(current_time.year)
+    reserved_instances["ReservedInstances"][0]["Start"].month.should.equal(current_time.month)
+    reserved_instances["ReservedInstances"][0]["Start"].day.should.equal(current_time.day)
+    reserved_instances["ReservedInstances"][0]["End"].year.should.equal(current_time.year+3)
+    reserved_instances["ReservedInstances"][0]["End"].month.should.equal(current_time.month)
+
+
+@mock_ec2
+def test_describe_reserved_instance_variable_offering_class():
+    client = boto3.client("ec2", region="us-west-1")
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+    
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    reserved_instances1 = client.describe_reserved_instances()
+    reserved_instances2 = client.describe_reserved_instances(OfferingClass="standard")
+    reserved_instances3 = client.describe_reserved_instances(OfferingClass="convertible")
+
+    len(reserved_instances1["ReservedInstances"]).should.equal(1)
+    len(reserved_instances2["ReservedInstances"]).should.equal(1)
+    len(reserved_instances3["ReservedInstances"]).should.equal(0)
+
+
+@mock_ec2
+def test_describe_reserved_instance_variable_offering_type():
+    client = boto3.client("ec2", region="us-west-1")
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+    
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    reserved_instances1 = client.describe_reserved_instances()
+    reserved_instances2 = client.describe_reserved_instances(OfferingType="No Upfront")
+    reserved_instances3 = client.describe_reserved_instances(OfferingType="All Upfront")
+
+    len(reserved_instances1["ReservedInstances"]).should.equal(1)
+    len(reserved_instances2["ReservedInstances"]).should.equal(1)
+    len(reserved_instances3["ReservedInstances"]).should.equal(0)
+
+
+@mock_ec2
+def test_describe_reserved_instance_variable_offering_class_and_type():
+    client = boto3.client("ec2", region="us-west-1")
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+    
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    reserved_instances1 = client.describe_reserved_instances()
+    reserved_instances2 = client.describe_reserved_instances(OfferingClass="standard", OfferingType="No Upfront")
+    reserved_instances3 = client.describe_reserved_instances(OfferingClass="standard", OfferingType="All Upfront")
+    reserved_instances4 = client.describe_reserved_instances(OfferingClass="convertible", OfferingType="No Upfront")
+    reserved_instances5 = client.describe_reserved_instances(OfferingClass="convertible", OfferingType="All Upfront")
+
+    len(reserved_instances1["ReservedInstances"]).should.equal(1)
+    len(reserved_instances2["ReservedInstances"]).should.equal(1)
+    len(reserved_instances3["ReservedInstances"]).should.equal(0)
+    len(reserved_instances4["ReservedInstances"]).should.equal(0)
+    len(reserved_instances5["ReservedInstances"]).should.equal(0)
+
+
+@mock_ec2
+def test_describe_reserved_instance_invalid_offering_class():
+    client = boto3.client("ec2", region="us-west-1")
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+    
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    with assert_raises(ClientError) as err:
+        client.describe_reserved_instances(OfferingClass="standarddd")
+    
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
+def test_describe_reserved_instance_invalid_offering_type():
+    client = boto3.client("ec2", region="us-west-1")
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+    
+    client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    with assert_raises(ClientError) as err:
+        client.describe_reserved_instances(OfferingType="Alll Upfront")
+    
+    e = err.exception
+    e.response["Error"]["Code"].should.equal("InvalidParameterValue")
