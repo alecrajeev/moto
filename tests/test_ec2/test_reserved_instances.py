@@ -532,7 +532,7 @@ def test_describe_reserved_instance():
     reserved_instance = client.describe_reserved_instances()
 
     len(reserved_instance["ReservedInstances"]).should.equal(1)
-    reserved_instance["ReservedInstanes"][0]["InstanceCount"].should.equal(1)
+    reserved_instance["ReservedInstances"][0]["InstanceCount"].should.equal(1)
 
 
 @mock_ec2
@@ -546,7 +546,7 @@ def test_describe_reserved_instance_multiple_instane_count():
     reserved_instance = client.describe_reserved_instances()
 
     len(reserved_instance["ReservedInstances"]).should.equal(1)
-    reserved_instance["ReservedInstanes"][0]["InstanceCount"].should.equal(test_instance_count)
+    reserved_instance["ReservedInstances"][0]["InstanceCount"].should.equal(test_instance_count)
 
 
 @mock_ec2

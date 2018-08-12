@@ -14,7 +14,7 @@ from pkg_resources import resource_filename
 import boto.ec2
 
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from boto.ec2.instance import Instance as BotoInstance, Reservation
 from boto.ec2.reservedinstance import ReservedInstancesOffering as BotoReservedInstancesOffering, ReservedInstance as BotoReservedInstance
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
@@ -948,8 +948,7 @@ class ReservedInstance(BotoReservedInstance):
         self.marketplace = offering.marketplace
         self.state = "active"
         self.start = datetime.utcnow()
-        # TODO: fix this to calculate end based on the duration
-        self.end = datetime.utcnow()
+        self.end = self.start + timedelta(seconds=self.duration)
         # the above can likely be improved by using inheritance properly
 
 
