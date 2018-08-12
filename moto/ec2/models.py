@@ -996,7 +996,7 @@ class ReservedInstanceBackend(object):
                                 reserved_instances.append(self.reserved_instances[r])
                             else:
                                 if self.reserved_instances[r].id in reserved_instances_ids:
-                                    reserved_instances.append(self.reserved_instances[r])                                
+                                    reserved_instances.append(self.reserved_instances[r])
                 else:
                     if self.reserved_instances[r].offering_class == offering_class:
                         if offering_type is None:
@@ -1025,11 +1025,6 @@ class ReservedInstanceBackend(object):
         TODO: add a better checkr to check for a valid UUID.
         Like if the dashes are in the right spot
         """
-
-        # Technically AWS allows this, but if you are going to use RI Ids in your input
-        # Then it must not be empty
-        if len(reserved_instances_id) < 1:
-            raise InvalidParameterValueErrorReservedInstanceId(reserved_instances_id)
 
         # reserved id must be exactly 36 characters
         for reserved_instance in reserved_instances_id:
@@ -1087,7 +1082,7 @@ class RIOfferingBackend(object):
 
     def get_offering_ids(self, reserved_instances_offering_id, **kwargs):
         temp_ri_offering_backend = RIOfferingBackend()
-        if reserved_instances_offering_id is None:
+        if reserved_instances_offering_id is None or reserved_instances_offering_id = []:
             instance_type = kwargs.get("instance_type")
             max_duration = kwargs.get("max_duration")
             min_duration = kwargs.get("min_duration")
@@ -1392,13 +1387,6 @@ class RIOfferingBackend(object):
         TODO: add a better checkr to check for a valid UUID.
         Like if the dashes are in the right spot
         """
-
-        # technically you can put ReservedInstancesOfferingIds=[] as valid and return everything
-        # however I am going to limit it so that if you elect to use ReservedInstancesOfferingIds
-        # you have to specify at least one offering id
-
-        if len(reserved_instances_offering_id) < 1:
-            raise InvalidParameterValueErrorOfferingId(reserved_instances_offering_id)
 
         # offering id must be exactly 36 characters
         for offering_id in reserved_instances_offering_id:

@@ -833,3 +833,27 @@ def test_describe_reserved_instance_invalid_reserved_instance_id():
     
     e = err.exception
     e.response["Error"]["Code"].should.equal("InvalidParameterValue")
+
+
+@mock_ec2
+def test_describe_reserved_instance_variable_offering_class_and_type_and_ri_id():
+    client = boto3.client("ec2", region_name="eu-west-1")
+
+    offering = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Linux/UNIX", InstanceTenancy="default",
+                            OfferingClass="standard", OfferingType="No Upfront", MaxDuration=31536000, MinDuration=31536000)
+    
+    purchase_ri = client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offering["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"], InstanceCount=1)
+
+    real_ri_id = purchase_ri["ReservedInstancesId"]
+
+    reserved_instances1 = client.describe_reserved_instances()
+    reserved_instances2 = client.describe_reserved_instances(OfferingClass="standard", OfferingType="No Upfront", ReservedInstancesIds=[ri_id])
+    reserved_instances3 = client.describe_reserved_instances(OfferingClass="standard", OfferingType="All Upfront")
+    reserved_instances4 = client.describe_reserved_instances(OfferingClass="convertible", OfferingType="No Upfront")
+    reserved_instances5 = client.describe_reserved_instances(OfferingClass="convertible", OfferingType="All Upfront")
+
+    len(reserved_instances1["ReservedInstances"]).should.equal(1)
+    len(reserved_instances2["ReservedInstances"]).should.equal(1)
+    len(reserved_instances3["ReservedInstances"]).should.equal(0)
+    len(reserved_instances4["ReservedInstances"]).should.equal(0)
+    len(reserved_instances5["ReservedInstances"]).should.equal(0)
