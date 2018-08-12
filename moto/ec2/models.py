@@ -948,7 +948,7 @@ class ReservedInstance(BotoReservedInstance):
         self.marketplace = offering.marketplace
         self.state = "active"
         self.start = datetime.utcnow()
-        #TODO: fix this to calculate end based on the duration
+        # TODO: fix this to calculate end based on the duration
         self.end = datetime.utcnow()
         # the above can likely be improved by using inheritance properly
 
@@ -966,7 +966,7 @@ class ReservedInstanceBackend(object):
         reserved_instance = ReservedInstance(self, instance_count, offerings[0])
         self.reserved_instances[reserved_instance.id] = reserved_instance
         return reserved_instance
-    
+
     def describe_reserved_instances(self, reserved_instances_ids, **kwargs):
         temp_ri_offering_backend = RIOfferingBackend()
         offering_class = kwargs.get("offering_class")
