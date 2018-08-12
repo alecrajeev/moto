@@ -942,9 +942,14 @@ class ReservedInstance(BotoReservedInstance):
         self.availability_zone = offering.availability_zone
         self.usage_price = offering.usage_price
         self.fixed_price = offering.fixed_price
+        self.currency_code = offering.currency_code
+        self.frequency = offering.frequency
+        self.amount = offering.amount
+        self.marketplace = offering.marketplace
         self.state = "active"
         self.start = datetime.utcnow()
-        self.end = None
+        #TODO: fix this to calculate end based on the duration
+        self.end = datetime.utcnow()
         # the above can likely be improved by using inheritance properly
 
 
@@ -961,6 +966,26 @@ class ReservedInstanceBackend(object):
         reserved_instance = ReservedInstance(self, instance_count, offerings[0])
         self.reserved_instances[reserved_instance.id] = reserved_instance
         return reserved_instance
+    
+    def describe_reserved_instances(self, reserved_instances_ids, **kwargs):
+        temp_ri_offering_backend = RIOfferingBackend()
+        offering_class = kwargs.get("offering_class")
+        offering_type = kwargs.get("offering_type")
+        region = kwargs.get("region")
+
+        temp_ri_offering_backend.invalid_offering_class(offering_class)
+        temp_ri_offering_backend.invalid_offering_type(offering_type)
+
+        if not(reserved_instances_ids is None or reserved_instances_ids == []):
+            temp_ri_offering_backend.invalid_reserved_instances_offering_id(reserved_instances_ids)
+
+        reserved_instances = []
+
+        for r in self.reserved_instances:
+            if self.reserved_instances[r].region == region:
+                reserved_instances.append(self.reserved_instances[r])
+
+        return reserved_instances
 
     def invalid_reserved_instances_offering_id(self, offerings):
         if len(offerings) < 1:
@@ -1319,6 +1344,9 @@ class RIOfferingBackend(object):
     def invalid_reserved_instances_offering_id(self, reserved_instances_offering_id):
         """
         Checks if offering id format is valid. (not necessarily if the id exists)
+        Also used to check if reserved instance id is valid. Both are a UUID
+        TODO: add a better checkr to check for a valid UUID.
+        Like if the dashes are in the right spot
         """
 
         # must have at least one offering id

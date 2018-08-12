@@ -15,8 +15,15 @@ class ReservedInstances(BaseResponse):
                 'ReservedInstances.create_reserved_instances_listing is not yet implemented')
 
     def describe_reserved_instances(self):
-        raise NotImplementedError(
-            'ReservedInstances.describe_reserved_instances is not yet implemented')
+        region = self.region
+        offering_class = self._get_param("OfferingClass")
+        offering_type = self._get_param("OfferingType")
+        reserved_instances_ids = self._get_multi_param("ReservedInstancesIds")
+
+        reserved_instances = self.ec2_backend.describe_reserved_instances(reserved_instances_ids, offering_class=offering_class, offering_type=offering_type, region=region)
+
+        template = self.response_template(EC2_DESCRIBE_RESERVED_INSTANCES)
+        return template.render(reserved_instances=reserved_instances)
 
     def describe_reserved_instances_listings(self):
         raise NotImplementedError(
@@ -83,7 +90,41 @@ EC2_DESCRIBE_RESERVED_INSTANCE_OFFERINGS = """<DescribeReservedInstancesOffering
   </reservedInstancesOfferingsSet>
 </DescribeReservedInstancesOfferingsResponse>"""
 
-EC2_PURCHASE_RESERVED_INSTANCES_OFFERING = """<PurchaseReservedInstancesOfferingResponse  xmlns="http://ec2.amazonaws.com/doc/2013-10-15/">
+EC2_PURCHASE_RESERVED_INSTANCES_OFFERING = """<PurchaseReservedInstancesOfferingResponse xmlns="http://ec2.amazonaws.com/doc/2013-10-15/">
   <requestId>69dbff89-35bd-4eac-99ed-be587EXAMPLE</requestId>
   <reservedInstancesId>{{ reserved_instance.id }}</reservedInstancesId>
   </PurchaseReservedInstancesOfferingResponse>"""
+
+EC2_DESCRIBE_RESERVED_INSTANCES = """<DescribeReservedInstancesResponse xmlns="http://ec2.amazonaws.com/doc/2013-10-15/">
+  <requestId>79dbff89-35bd-4eac-99ed-be587EXAMPLE</requestId>
+  <reservedInstancesSet>
+    {% for reserved_instance in reserved_instances %}
+      <item>
+        <reservedInstancesId>{{ reserved_instance.id }}</reservedInstancesId>
+        <instanceType>{{ reserved_instance.instance_type }}</instanceType>
+        {% if reserved_instance.scope == "Availability Zone" %}
+            <availabilityZone>{{ reserved_instance.availability_zone }}</availabilityZone>
+        {% endif %}
+        <start>{{ reserved_instance.start }}</start>
+        <end>{{ reserved_instance.end }}</end>
+        <duration>{{ reserved_instance.duration }}</duration>
+        <fixedPrice>{{ reserved_instance.fixed_price }}</fixedPrice>
+        <usagePrice>{{ reserved_instance.usage_price }}</usagePrice>
+        <instanceCount>{{ reserved_instance.instance_count }}</instanceCount>
+        <productDescription>{{ reserved_instance.description }}</productDescription>
+        <state>{{ reserved_instance.state }}</state>
+        <instanceTenancy>{{ reserved_instance.instance_tenancy }}</instanceTenancy>
+        <currencyCode>{{ reserved_instance.currency_code }}</currencyCode>
+        <offeringClass>{{ reserved_instance.offering_class }}</offeringClass>
+        <offeringType>{{ reserved_instance.offering_type }}</offeringType>
+        <recurringCharges>
+          <item>
+            <frequency>{{ reserved_instance.frequency }}</frequency>
+            <amount>{{ reserved_instance.amount }}</amount>
+          </item>
+        </recurringCharges>
+        <scope>{{ reserved_instance.scope }}</scope>
+      </item>
+    {% endfor %}
+  </reservedInstancesSet>
+</DescribeReservedInstancesResponse>"""
