@@ -18,7 +18,7 @@ class ReservedInstances(BaseResponse):
         region = self.region
         offering_class = self._get_param("OfferingClass")
         offering_type = self._get_param("OfferingType")
-        reserved_instances_ids = self._get_multi_param("ReservedInstancesIds")
+        reserved_instances_ids = self._get_multi_param("ReservedInstancesId")
 
         reserved_instances = self.ec2_backend.describe_reserved_instances(reserved_instances_ids, offering_class=offering_class, offering_type=offering_type, region=region)
 

@@ -60,6 +60,7 @@ from .exceptions import (
     InvalidParameterValueErrorMinDuration,
     InvalidParameterValueErrorDurationMisMatch,
     InvalidParameterValueErrorOfferingId,
+    InvalidParameterValueErrorReservedInstanceId,
     InvalidPermissionNotFoundError,
     InvalidPermissionDuplicateError,
     InvalidReservedInstancesOfferingId,
@@ -975,8 +976,10 @@ class ReservedInstanceBackend(object):
         temp_ri_offering_backend.invalid_offering_class(offering_class)
         temp_ri_offering_backend.invalid_offering_type(offering_type)
 
-        if not(reserved_instances_ids is None or reserved_instances_ids == []):
-            temp_ri_offering_backend.invalid_reserved_instances_offering_id(reserved_instances_ids)
+        if not(reserved_instances_ids is None):
+            if not(reserved_instances_ids == []):
+                print(reserved_instances_ids)
+                self.invalid_reserved_instances_id(reserved_instances_ids)
 
         reserved_instances = []
 
@@ -1001,6 +1004,22 @@ class ReservedInstanceBackend(object):
     def invalid_reserved_instances_offering_id(self, offerings):
         if len(offerings) < 1:
             raise InvalidReservedInstancesOfferingId()
+    
+    def invalid_reserved_instances_id(self, reserved_instances_id):
+        """
+        Checks if reserved instance id format is valid. (not necessarily if the id exists)
+        TODO: add a better checkr to check for a valid UUID.
+        Like if the dashes are in the right spot
+        """
+
+        # must have at least one reserved id
+        if len(reserved_instances_id) < 0:
+            raise InvalidParameterValueErrorReservedInstanceId(reserved_instances_id)
+
+        # reserved id must be exactly 36 characters
+        for reserved_instance in reserved_instances_id:
+            if len(reserved_instance) != 36:
+                raise InvalidParameterValueErrorReservedInstanceId(reserved_instance)
 
 
 class ReservedInstancesOffering(BotoReservedInstancesOffering):
@@ -1355,7 +1374,6 @@ class RIOfferingBackend(object):
     def invalid_reserved_instances_offering_id(self, reserved_instances_offering_id):
         """
         Checks if offering id format is valid. (not necessarily if the id exists)
-        Also used to check if reserved instance id is valid. Both are a UUID
         TODO: add a better checkr to check for a valid UUID.
         Like if the dashes are in the right spot
         """
