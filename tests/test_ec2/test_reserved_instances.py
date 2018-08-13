@@ -902,7 +902,7 @@ def test_describe_reserved_instance_variable_offering_class_and_type_and_ri_id2(
 
 @mock_ec2
 def test_describe_reserved_instance_multiple_ris():
-    client = boto3.client("ec2", region_name="eu-west-3")
+    client = boto3.client("ec2", region_name="eu-west-1")
 
     offerings1 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Windows",
                         OfferingType="No Upfront", OfferingClass="standard", InstanceTenancy="default")
