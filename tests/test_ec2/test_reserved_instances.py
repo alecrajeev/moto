@@ -918,8 +918,8 @@ def test_describe_reserved_instance_multiple_ris():
 
     reserved_instances1 = client.describe_reserved_instances()
     reserved_instances2 = client.describe_reserved_instances(ReservedInstancesIds=[ri_id1])
-    reserved_instances3 = client.describe_reserved_instances(ReservedInstacnesIds=[ri_id2])
-    reserved_instances4 = client.describe_reserved_instances(ReservedInstacnesIds=[ri_id1, ri_id2])
+    reserved_instances3 = client.describe_reserved_instances(ReservedInstancesIds=[ri_id2])
+    reserved_instances4 = client.describe_reserved_instances(ReservedInstancesIds=[ri_id1, ri_id2])
 
     len(reserved_instances1["ReservedInstances"]).should.equal(2)
     len(reserved_instances2["ReservedInstances"]).should.equal(1)
@@ -929,4 +929,4 @@ def test_describe_reserved_instance_multiple_ris():
     reserved_instances2["Reservedinstances"][0]["InstanceType"].should.equal("t2.nano")
     reserved_instances2["Reservedinstances"][0]["ProductDescription"].should.equal("Windows")
     reserved_instances3["Reservedinstances"][0]["InstanceType"].should.equal("c5.large")
-    reserved_instances3["Reservedinstances"][0]["ProductDescription"].should.equal("Linux/UNIX")    
+    reserved_instances3["Reservedinstances"][0]["ProductDescription"].should.equal("Linux/UNIX")
