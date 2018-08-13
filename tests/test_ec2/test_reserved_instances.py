@@ -907,7 +907,7 @@ def test_describe_reserved_instance_multiple_ris():
     offerings1 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Windows",
                         OfferingType="No Upfront", OfferingClass="standard", InstanceTenancy="default")
 
-    offerings2 = client.describe_reserved_instances_offerings(InstanceType="c5.large", ProductDescription="Linux/Unix",
+    offerings2 = client.describe_reserved_instances_offerings(InstanceType="c5.large", ProductDescription="Linux/UNIX",
                         OfferingType="Partial Upfront", OfferingClass="convertible", InstanceTenancy="default")
 
     purchase_ri1 = client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offerings1["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"])
