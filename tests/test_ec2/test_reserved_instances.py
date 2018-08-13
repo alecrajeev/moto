@@ -926,7 +926,7 @@ def test_describe_reserved_instance_multiple_ris():
     len(reserved_instances3["ReservedInstances"]).should.equal(1)
     len(reserved_instances4["ReservedInstances"]).should.equal(2)
 
-    reserved_instances2["Reservedinstances"][0]["InstanceType"].should.equal("t2.nano")
-    reserved_instances2["Reservedinstances"][0]["ProductDescription"].should.equal("Windows")
-    reserved_instances3["Reservedinstances"][0]["InstanceType"].should.equal("c5.large")
-    reserved_instances3["Reservedinstances"][0]["ProductDescription"].should.equal("Linux/UNIX")
+    reserved_instances2["ReservedInstances"][0]["InstanceType"].should.equal("t2.nano")
+    reserved_instances2["ReservedInstances"][0]["ProductDescription"].should.equal("Windows")
+    reserved_instances3["ReservedInstances"][0]["InstanceType"].should.equal("c5.large")
+    reserved_instances3["ReservedInstances"][0]["ProductDescription"].should.equal("Linux/UNIX")
