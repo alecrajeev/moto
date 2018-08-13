@@ -898,3 +898,35 @@ def test_describe_reserved_instance_variable_offering_class_and_type_and_ri_id2(
     reserved_instances1["ReservedInstances"][0]["ReservedInstancesId"].should.equal(real_ri_id)
     reserved_instances2["ReservedInstances"][0]["ReservedInstancesId"].should.equal(real_ri_id)
     reserved_instances5["ReservedInstances"][0]["ReservedInstancesId"].should.equal(real_ri_id)
+
+
+@mock_ec2
+def test_describe_reserved_instance_multiple_ris():
+    client = boto3.client("ec2", region_name="eu-west-3")
+
+    offerings1 = client.describe_reserved_instances_offerings(InstanceType="t2.nano", ProductDescription="Windows",
+                        OfferingType="No Upfront", OfferingClass="standard", InstanceTenancy="default")
+
+    offerings2 = client.describe_reserved_instances_offerings(InstanceType="c5.large", ProductDescription="Linux/Unix",
+                        OfferingType="Partial Upfront", OfferingClass="convertible", InstanceTenancy="default")
+
+    purchase_ri1 = client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offerings1["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"])
+    purchase_ri2 = client.purchase_reserved_instances_offering(ReservedInstancesOfferingId=offerings2["ReservedInstancesOfferings"][0]["ReservedInstancesOfferingId"])
+
+    ri_id1 = purchase_ri1["ReservedInstancesId"]
+    ri_id2 = purchase_ri2["ReservedInstancesId"]
+
+    reserved_instances1 = client.describe_reserved_instances()
+    reserved_instances2 = client.describe_reserved_instances(ReservedInstancesIds=[ri_id1])
+    reserved_instances3 = client.describe_reserved_instances(ReservedInstacnesIds=[ri_id2])
+    reserved_instances4 = client.describe_reserved_instances(ReservedInstacnesIds=[ri_id1, ri_id2])
+
+    len(reserved_instances1["ReservedInstances"]).should.equal(2)
+    len(reserved_instances2["ReservedInstances"]).should.equal(1)
+    len(reserved_instances3["ReservedInstances"]).should.equal(1)
+    len(reserved_instances4["ReservedInstances"]).should.equal(2)
+
+    reserved_instances2["Reservedinstances"][0]["InstanceType"].should.equal("t2.nano")
+    reserved_instances2["Reservedinstances"][0]["ProductDescription"].should.equal("Windows")
+    reserved_instances3["Reservedinstances"][0]["InstanceType"].should.equal("c5.large")
+    reserved_instances3["Reservedinstances"][0]["ProductDescription"].should.equal("Linux/UNIX")    
